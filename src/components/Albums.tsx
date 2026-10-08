@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getCatalog } from '../api'
 import type { CatalogDetail, CatalogFolder, CatalogRoot, RadioStatus } from '../types'
-import { isLive, joinArtist } from '../utils'
+import { isLive, joinArtist, naturalCompare } from '../utils'
 import { Artwork } from './Artwork'
 import { Icon } from './Icons'
 import { PlayerControls } from './PlayerControls'
@@ -37,7 +37,10 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   }, [folder])
 
   const folders = useMemo(() => data && isRoot(data) ? data.folders : data?.subfolders || [], [data])
-  const filtered = useMemo(() => folders.filter((item) => item.name.toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR'))), [folders, query])
+  const filtered = useMemo(() => folders
+    .filter((item) => item.name.toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR')))
+    .slice()
+    .sort((left, right) => naturalCompare(left.name, right.name)), [folders, query])
   const detail = data && !isRoot(data) ? data : null
   const parent = folder?.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : undefined
   const live = isLive(status)

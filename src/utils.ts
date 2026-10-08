@@ -1,5 +1,14 @@
 import type { RadioStatus } from './types'
 
+const naturalCollator = new Intl.Collator('pt-BR', {
+  numeric: true,
+  sensitivity: 'base',
+})
+
+export function naturalCompare(left: string, right: string): number {
+  return naturalCollator.compare(left, right)
+}
+
 export function isLive(status: RadioStatus | null): boolean {
   return Boolean(status?.live_connected || status?.mode?.toLowerCase().includes('live'))
 }

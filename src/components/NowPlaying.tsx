@@ -3,14 +3,14 @@ import { versionedArtworkUrl } from '../api'
 import type { RadioStatus } from '../types'
 import { formatTime, isLive, joinArtist } from '../utils'
 import { Artwork } from './Artwork'
-import { Icon } from './Icons'
+import { MarqueeText } from './MarqueeText'
 import { PlayerControls } from './PlayerControls'
 
 type Props = {
   status: RadioStatus | null
   loading: boolean
   pending: string | null
-  onAction: (action: 'previous' | 'restart' | 'pause' | 'play' | 'next' | 'previous-folder' | 'next-folder') => void
+  onAction: (action: 'previous' | 'restart' | 'pause' | 'play' | 'next') => void
 }
 
 export function NowPlaying({ status, loading, pending, onAction }: Props) {
@@ -34,19 +34,14 @@ export function NowPlaying({ status, loading, pending, onAction }: Props) {
         </div>
 
         <div className="track-info">
-          <p className="eyebrow">{live ? 'TRANSMISSÃO DA REDE' : status?.current_folder || 'SURVIVOR RADIO'}</p>
-          <h1 id="now-title">{loading && !status ? 'Conectando…' : live ? 'Ao vivo' : media?.title || media?.filename || 'Nada tocando agora'}</h1>
-          <p className="artist">{live ? 'Sinal externo conectado' : joinArtist(status)}</p>
-          {!live && media?.album && <p className="album">{media.album}</p>}
+          {live && <p className="eyebrow">TRANSMISSÃO DA REDE</p>}
+          <h1 id="now-title"><MarqueeText>{loading && !status ? 'Conectando…' : live ? 'Ao vivo' : media?.title || media?.filename || 'Nada tocando agora'}</MarqueeText></h1>
+          <p className="artist"><MarqueeText>{live ? 'Sinal externo conectado' : joinArtist(status)}</MarqueeText></p>
+          {!live && media?.album && <p className="album"><MarqueeText>{media.album}</MarqueeText></p>}
 
           <ProgressBlock key={`${media?.path}-${status?.position_seconds}-${status?.paused}`} initialPosition={status?.position_seconds ?? 0} duration={duration} running={Boolean(status && !status.paused && !live)} />
 
           <PlayerControls paused={Boolean(status?.paused)} disabled={disabled} pending={pending} onAction={onAction} />
-
-          <div className="folder-controls">
-            <button disabled={disabled} onClick={() => onAction('previous-folder')}><Icon name="chevronLeft" /> Pasta anterior</button>
-            <button disabled={disabled} onClick={() => onAction('next-folder')}>Próxima pasta <Icon name="chevronRight" /></button>
-          </div>
 
           {live && <p className="live-note">Os controles do catálogo ficam disponíveis quando a transmissão ao vivo terminar.</p>}
         </div>

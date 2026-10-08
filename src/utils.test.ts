@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RadioStatus } from './types'
-import { formatTime, isLive, joinArtist } from './utils'
+import { formatTime, isLive, joinArtist, naturalCompare } from './utils'
 
 const status: RadioStatus = {
   mode: 'fallback-catalog',
@@ -26,5 +26,10 @@ describe('player helpers', () => {
     expect(joinArtist({ ...status, current_media: { path: 'a', filename: 'a', artist: 'Artist', album_artist: 'DJ' } })).toBe('Artist')
     expect(joinArtist({ ...status, current_media: { path: 'a', filename: 'a', album_artist: 'DJ' } })).toBe('DJ')
     expect(joinArtist(status)).toBe('Survivor Radio')
+  })
+
+  it('sorts numbered folder names in natural alphabetical order', () => {
+    const folders = ['Metro Tech 10', 'Álbuns 2', 'Metro Tech 3', 'Albuns 12']
+    expect(folders.sort(naturalCompare)).toEqual(['Álbuns 2', 'Albuns 12', 'Metro Tech 3', 'Metro Tech 10'])
   })
 })
