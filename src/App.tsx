@@ -48,12 +48,12 @@ export default function App() {
         <a className="settings-button" href="/" aria-label="Abrir interface administrativa" title="Administração"><Icon name="gear" /></a>
       </header>
 
-      <main>
-        <div hidden={tab !== 'now'}>
+      <main className="app-main">
+        <div className="tab-panel" data-tab-panel="now" hidden={tab !== 'now'}>
           <NowPlaying status={status} loading={loading} pending={pending} onAction={handleAction} />
         </div>
         {foldersMounted && (
-          <div hidden={tab !== 'albums'}>
+          <div className="tab-panel" data-tab-panel="albums" hidden={tab !== 'albums'}>
             <Albums status={status} pending={pending} onAction={handleAction} onSelectFolder={handleFolder} onSelectTrack={handleTrack} />
           </div>
         )}

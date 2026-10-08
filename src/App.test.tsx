@@ -45,10 +45,15 @@ describe('navegação principal', () => {
     await user.click(await screen.findByRole('button', { name: 'Abrir pasta Metro Tech 3' }))
     expect(await screen.findByRole('heading', { name: 'Metro Tech 3' })).toBeInTheDocument()
 
+    const foldersPanel = document.querySelector<HTMLElement>('[data-tab-panel="albums"]')
+    expect(foldersPanel).not.toBeNull()
+    foldersPanel!.scrollTop = 240
+
     await user.click(screen.getByRole('button', { name: 'Agora' }))
     await user.click(screen.getByRole('button', { name: 'Pastas' }))
 
     expect(screen.getByRole('heading', { name: 'Metro Tech 3' })).toBeInTheDocument()
+    expect(foldersPanel!.scrollTop).toBe(240)
     expect(getCatalog).toHaveBeenCalledTimes(2)
   })
 })
