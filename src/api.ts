@@ -14,6 +14,14 @@ export function apiUrl(pathOrUrl: string): string {
   return `${API_BASE}${path}`
 }
 
+export function versionedArtworkUrl(pathOrUrl: string | undefined, mediaKey?: string): string | undefined {
+  if (!pathOrUrl) return undefined
+  const resolved = apiUrl(pathOrUrl)
+  if (!mediaKey) return resolved
+  const separator = resolved.includes('?') ? '&' : '?'
+  return `${resolved}${separator}media=${encodeURIComponent(mediaKey)}`
+}
+
 async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(apiUrl(path), {
     method: 'GET',

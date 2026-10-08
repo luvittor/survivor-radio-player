@@ -2,7 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { getStatus } from './api'
 import type { RadioStatus } from './types'
 
-const POLL_INTERVAL = 5000
+// A faixa também pode mudar em outro dispositivo. Um intervalo curto mantém
+// título, progresso e capa sincronizados sem depender da ação local.
+const POLL_INTERVAL = 1000
 
 export function useRadioStatus() {
   const [status, setStatus] = useState<RadioStatus | null>(null)

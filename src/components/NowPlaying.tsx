@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { apiUrl } from '../api'
+import { versionedArtworkUrl } from '../api'
 import type { RadioStatus } from '../types'
 import { formatTime, isLive, joinArtist } from '../utils'
 import { Artwork } from './Artwork'
@@ -19,7 +19,8 @@ export function NowPlaying({ status, loading, pending, onAction }: Props) {
   const duration = media?.duration_seconds
 
   const artwork = media?.artwork?.available ? media.artwork.url : undefined
-  const backdrop = useMemo(() => live ? `${import.meta.env.BASE_URL}live.svg` : artwork ? apiUrl(artwork) : `${import.meta.env.BASE_URL}icon.png`, [artwork, live])
+  const mediaKey = media?.path
+  const backdrop = useMemo(() => live ? `${import.meta.env.BASE_URL}live.svg` : versionedArtworkUrl(artwork, mediaKey) || `${import.meta.env.BASE_URL}icon.png`, [artwork, live, mediaKey])
   const disabled = !status || live || Boolean(pending)
 
   return (
@@ -27,7 +28,7 @@ export function NowPlaying({ status, loading, pending, onAction }: Props) {
       <div className="artwork-backdrop" style={{ backgroundImage: `url(${JSON.stringify(backdrop).slice(1, -1)})` }} />
       <div className="now-content">
         <div className="cover-shell">
-          <Artwork className="cover-art" src={artwork} live={live} alt={live ? 'Transmissão ao vivo' : media?.album ? `Capa de ${media.album}` : 'Capa da mídia atual'} />
+          <Artwork className="cover-art" src={artwork} cacheKey={mediaKey} live={live} alt={live ? 'Transmissão ao vivo' : media?.album ? `Capa de ${media.album}` : 'Capa da mídia atual'} />
           {status?.paused && <span className="paused-overlay">PAUSED</span>}
           {live && <span className="live-badge"><span /> LIVE</span>}
         </div>

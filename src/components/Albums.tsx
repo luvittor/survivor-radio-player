@@ -64,7 +64,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         <div>
           {folder && <button className="back-button" onClick={() => navigateTo(parent)}><Icon name="back" /> Voltar</button>}
           <p className="eyebrow">SUA COLEÇÃO</p>
-          <h1 id="albums-title">{detail?.folder ? detail.folder.split('/').at(-1) : 'Álbuns'}</h1>
+          <h1 id="albums-title">{detail?.folder ? detail.folder.split('/').at(-1) : 'Pastas'}</h1>
           <p>{detail ? `${detail.tracks.length} faixas${detail.subfolders.length ? ` · ${detail.subfolders.length} pastas` : ''}` : `${(data as CatalogRoot | null)?.folder_count ?? 0} pastas · ${(data as CatalogRoot | null)?.track_count ?? 0} faixas`}</p>
         </div>
         {detail && !live && <button className="play-folder" disabled={Boolean(pending)} onClick={() => void onSelectFolder(detail.folder)}><Icon name="play" /> Tocar pasta</button>}
@@ -79,14 +79,17 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
           </label>
           <div className="album-grid">
             {filtered.map((item) => (
-              <button key={item.folder} className={`album-card${status?.current_folder === item.folder ? ' album-card--active' : ''}`} onClick={() => openFolder(item)}>
-                <span className="album-cover">
-                  <Artwork src={item.artwork_url} alt="" />
-                  {status?.current_folder === item.folder && <span className="playing-pill"><Icon name="music" /> Tocando</span>}
-                </span>
-                <strong>{item.name}</strong>
-                <span>{item.folder.includes('/') ? item.folder.split('/').slice(0, -1).join(' / ') : 'Álbum'}</span>
-              </button>
+              <article key={item.folder} className={`album-card${status?.current_folder === item.folder ? ' album-card--active' : ''}`}>
+                <button className="album-open" onClick={() => openFolder(item)} aria-label={`Abrir pasta ${item.name}`}>
+                  <span className="album-cover">
+                    <Artwork src={item.artwork_url} alt="" />
+                    {status?.current_folder === item.folder && <span className="playing-pill"><Icon name="music" /> Tocando</span>}
+                  </span>
+                  <strong>{item.name}</strong>
+                  <span>{item.folder.includes('/') ? item.folder.split('/').slice(0, -1).join(' / ') : 'Pasta'}</span>
+                </button>
+                <button className="folder-quick-play" disabled={live || Boolean(pending)} onClick={() => void onSelectFolder(item.folder)} aria-label={`Tocar pasta ${item.name}`} title={`Tocar ${item.name}`}><Icon name="play" /></button>
+              </article>
             ))}
           </div>
           {filtered.length === 0 && <div className="empty-search">Nenhuma pasta encontrada para “{query}”.</div>}
@@ -111,7 +114,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
       {detail && folders.length === 0 && detail.tracks.length === 0 && <div className="empty-search">Esta pasta está vazia.</div>}
 
       <div className="mini-player">
-        <Artwork src={status?.current_media?.artwork?.available ? status.current_media.artwork.url : undefined} live={live} alt="" />
+        <Artwork src={status?.current_media?.artwork?.available ? status.current_media.artwork.url : undefined} cacheKey={status?.current_media?.path} live={live} alt="" />
         <div><strong>{live ? 'Ao vivo' : status?.current_media?.title || status?.current_media?.filename || 'Nada tocando'}</strong><span>{live ? 'Sinal externo conectado' : joinArtist(status)}</span></div>
         <PlayerControls compact paused={Boolean(status?.paused)} disabled={!status || live || Boolean(pending)} pending={pending} onAction={onAction} />
       </div>

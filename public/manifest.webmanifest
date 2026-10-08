@@ -1,6 +1,6 @@
 {
   "name": "Survivor Radio Player",
-  "short_name": "Survivor Radio",
+  "short_name": "Survivor Radio Player",
   "description": "Controle local da Survivor Radio",
   "start_url": "/player/",
   "scope": "/player/",

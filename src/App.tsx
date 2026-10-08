@@ -37,9 +37,9 @@ export default function App() {
       <header className="app-header">
         <button className="brand" onClick={() => setTab('now')} aria-label="Abrir Agora">
           <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
-          <span><strong>Survivor</strong><small>RADIO</small></span>
+          <strong>Survivor Radio Player</strong>
         </button>
-        <div className={`connection-dot${error ? ' connection-dot--error' : ''}`} title={error || 'Conectado ao Survivor'}><span />{error ? 'Offline' : 'Na rede'}</div>
+        <div className={`connection-dot${error ? ' connection-dot--error' : ''}`} title={error || 'Conectado ao Survivor'}><span /><span className="connection-label">{error ? 'Offline' : 'Na rede'}</span></div>
         <a className="settings-button" href="/" aria-label="Abrir interface administrativa" title="Administração"><Icon name="gear" /></a>
       </header>
 
@@ -53,7 +53,7 @@ export default function App() {
 
       <nav className="tab-bar" aria-label="Navegação principal">
         <button className={tab === 'now' ? 'active' : ''} onClick={() => setTab('now')}><Icon name="radio" /><span>Agora</span></button>
-        <button className={tab === 'albums' ? 'active' : ''} onClick={() => setTab('albums')}><Icon name="albums" /><span>Álbuns</span></button>
+        <button className={tab === 'albums' ? 'active' : ''} onClick={() => setTab('albums')}><Icon name="albums" /><span>Pastas</span></button>
       </nav>
     </div>
   )
