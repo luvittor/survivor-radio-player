@@ -21,9 +21,9 @@
 
   <g fill="none" stroke="#f7fbff" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
     <g class="dish" stroke-width="17" mask="url(#dish-cutouts)">
-      <path d="M162 157 337 326"/>
-      <path d="M162 157c-50 55-45 135 19 184 43 33 105 18 156-15"/>
-      <path d="m181 341 111-122"/>
+      <path d="M183 178 337 326"/>
+      <path d="M183 178c-45 50-38 119-2 163 43 33 105 18 156-15"/>
+      <path d="m260 252 32-33"/>
       <path d="m169 355-39 68m62-68 34 68M105 423h150"/>
       <circle cx="292" cy="219" r="17"/>
       <circle cx="181" cy="341" r="19"/>
