@@ -1,0 +1,59 @@
+import type { CatalogDetail, CatalogRoot, ControlAction, RadioStatus } from './types'
+
+export const API_BASE = import.meta.env.DEV ? '/api' : ''
+
+export function apiUrl(pathOrUrl: string): string {
+  let path = pathOrUrl
+
+  if (/^https?:\/\//i.test(path)) {
+    const parsed = new URL(path)
+    path = `${parsed.pathname}${parsed.search}`
+  }
+
+  if (!path.startsWith('/')) path = `/${path}`
+  return `${API_BASE}${path}`
+}
+
+async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
+  const response = await fetch(apiUrl(path), {
+    method: 'GET',
+    cache: 'no-store',
+    signal,
+    headers: { Accept: 'application/json' },
+  })
+
+  if (!response.ok) throw new Error(`Servidor respondeu ${response.status}`)
+  return response.json() as Promise<T>
+}
+
+async function requestControl(path: string): Promise<void> {
+  const response = await fetch(apiUrl(path), {
+    method: 'GET',
+    cache: 'no-store',
+    headers: { Accept: 'application/json, text/plain, */*' },
+  })
+
+  if (!response.ok) throw new Error(`Servidor respondeu ${response.status}`)
+}
+
+export const getStatus = (signal?: AbortSignal) => requestJson<RadioStatus>('/status', signal)
+
+export const getCatalog = (folder?: string, signal?: AbortSignal) =>
+  requestJson<CatalogRoot | CatalogDetail>(
+    folder ? `/control/catalog?folder=${encodeURIComponent(folder)}` : '/control/catalog',
+    signal,
+  )
+
+export async function runControl(action: ControlAction): Promise<void> {
+  await requestControl(`/control/${action}`)
+}
+
+export async function selectFolder(folder: string): Promise<void> {
+  await requestControl(`/control/select-folder?folder=${encodeURIComponent(folder)}`)
+}
+
+export async function selectTrack(folder: string, track: string): Promise<void> {
+  await requestControl(
+    `/control/select-track?folder=${encodeURIComponent(folder)}&track=${encodeURIComponent(track)}`,
+  )
+}
