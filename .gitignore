@@ -1,9 +1,11 @@
 node_modules/
 dist/
+coverage/
+playwright-report/
+test-results/
 *.tsbuildinfo
 public/icon.png
 public/icon-192.png
 public/icon-512.png
 public/icon-maskable-512.png
 public/live.png
-
