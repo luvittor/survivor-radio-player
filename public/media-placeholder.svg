@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Mídia sem capa</title>
+  <desc id="desc">Nota musical luminosa</desc>
+  <defs>
+    <radialGradient id="bg" cx="52%" cy="43%" r="72%">
+      <stop stop-color="#193b60"/>
+      <stop offset="1" stop-color="#06101b"/>
+    </radialGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <g class="note" fill="none" stroke="#f7fbff" stroke-width="17" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <ellipse cx="200" cy="342" rx="42" ry="34" transform="rotate(-18 190 342)"/>
+    <path d="M242 329V166"/>
+    <path d="M242 166c46 18 75 48 70 81-2 15-10 27-22 37"/>
+  </g>
+
+  <style>
+    .note{transform-origin:242px 260px;animation:drift 5s infinite ease-in-out}
+    @keyframes drift{0%,100%{transform:rotate(-.65deg)}50%{transform:rotate(.65deg)}}
+    @media(prefers-reduced-motion:reduce){.note{animation:none}}
+  </style>
+</svg>

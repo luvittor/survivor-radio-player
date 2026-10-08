@@ -8,7 +8,7 @@ describe('Artwork', () => {
     const image = screen.getByAltText('Capa')
     expect(image).toHaveAttribute('src', '/api/artwork/current?media=Pasta%2Ffaixa.mp3')
     fireEvent.error(image)
-    expect(image).toHaveAttribute('src', '/icon.png')
+    expect(image).toHaveAttribute('src', '/media-placeholder.svg')
   })
 
   it('usa o SVG live e recua para o PNG live se necessário', () => {

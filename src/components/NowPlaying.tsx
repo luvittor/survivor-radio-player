@@ -20,7 +20,7 @@ export function NowPlaying({ status, loading, pending, onAction }: Props) {
 
   const artwork = media?.artwork?.available ? media.artwork.url : undefined
   const mediaKey = media?.path
-  const backdrop = useMemo(() => live ? `${import.meta.env.BASE_URL}live.svg` : versionedArtworkUrl(artwork, mediaKey) || `${import.meta.env.BASE_URL}icon.png`, [artwork, live, mediaKey])
+  const backdrop = useMemo(() => live ? `${import.meta.env.BASE_URL}live.svg` : versionedArtworkUrl(artwork, mediaKey) || `${import.meta.env.BASE_URL}media-placeholder.svg`, [artwork, live, mediaKey])
   const disabled = !status || live || Boolean(pending)
 
   return (
