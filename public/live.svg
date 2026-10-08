@@ -1,24 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Transmissão ao vivo</title>
-  <desc id="desc">Parabólica emitindo três sinais</desc>
+  <desc id="desc">Antena parabólica emitindo três sinais</desc>
   <defs>
-    <radialGradient id="bg" cx="52%" cy="44%" r="68%"><stop stop-color="#18385a"/><stop offset="1" stop-color="#06101b"/></radialGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <radialGradient id="bg" cx="52%" cy="43%" r="72%">
+      <stop stop-color="#193b60"/>
+      <stop offset="1" stop-color="#06101b"/>
+    </radialGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <mask id="dish-cutouts" maskUnits="userSpaceOnUse" x="80" y="130" width="300" height="330">
+      <rect x="80" y="130" width="300" height="330" fill="white"/>
+      <circle cx="292" cy="219" r="8.5" fill="black"/>
+      <circle cx="181" cy="341" r="10.5" fill="black"/>
+    </mask>
   </defs>
-  <rect width="512" height="512" rx="92" fill="url(#bg)"/>
-  <g fill="none" stroke="#f7fbff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
-    <g class="dish"><path d="M115 178a156 156 0 0 0 220 220z"/><path d="m165 365-42 67m13-6h118"/><circle cx="304" cy="209" r="16" fill="#f7fbff"/></g>
-    <path class="signal s1" d="M329 186a46 46 0 0 1 19 38"/>
-    <path class="signal s2" d="M350 153a86 86 0 0 1 36 72"/>
-    <path class="signal s3" d="M372 120a126 126 0 0 1 52 105"/>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <g fill="none" stroke="#f7fbff" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)">
+    <g class="dish" stroke-width="17" mask="url(#dish-cutouts)">
+      <path d="M162 157 337 326"/>
+      <path d="M162 157c-50 55-45 135 19 184 43 33 105 18 156-15"/>
+      <path d="m181 341 111-122"/>
+      <path d="m169 355-39 68m62-68 34 68M105 423h150"/>
+      <circle cx="292" cy="219" r="17"/>
+      <circle cx="181" cy="341" r="19"/>
+    </g>
+    <path class="signal s1" stroke-width="18" d="M297 166c31 13 50 34 49 56"/>
+    <path class="signal s2" stroke-width="18" d="M304 132c47 20 71 50 70 84"/>
+    <path class="signal s3" stroke-width="18" d="M316 98c60 25 94 65 96 107"/>
   </g>
+
   <style>
-    .signal{opacity:.16;animation:pulse 2.4s infinite ease-in-out}.s2{animation-delay:.5s}.s3{animation-delay:1s}
-    .dish{transform-origin:260px 290px;animation:drift 5s infinite ease-in-out}
-    .dish circle{animation:beacon 1.2s infinite alternate ease-in-out}
-    @keyframes pulse{0%,18%,100%{opacity:.16}35%,70%{opacity:1}}
-    @keyframes drift{0%,100%{transform:rotate(-1deg)}50%{transform:rotate(1deg)}}
-    @keyframes beacon{to{opacity:.6}}
+    .signal{opacity:.18;animation:pulse 2.4s infinite ease-in-out}.s2{animation-delay:.5s}.s3{animation-delay:1s}
+    .dish{transform-origin:225px 294px;animation:drift 5s infinite ease-in-out}
+    .dish circle:first-of-type{animation:beacon 1.2s infinite alternate ease-in-out}
+    @keyframes pulse{0%,18%,100%{opacity:.18}35%,70%{opacity:1}}
+    @keyframes drift{0%,100%{transform:rotate(-.65deg)}50%{transform:rotate(.65deg)}}
+    @keyframes beacon{to{opacity:.68}}
     @media(prefers-reduced-motion:reduce){.signal{opacity:1;animation:none}.dish,.dish circle{animation:none}}
   </style>
 </svg>

@@ -100,6 +100,13 @@ test('controla pause, play e faixa e recebe ações de outro dispositivo', async
   survivor.externalUpdate({ live_connected: true, mode: 'live-uplink', paused: false, pause_phase: 'playing' })
   await expect(page.getByRole('heading', { name: 'Ao vivo' })).toBeVisible({ timeout: 2_000 })
   await expect(page.getByText('LIVE')).toBeVisible()
+  await expect(page.getByAltText('Transmissão ao vivo')).toHaveJSProperty('complete', true)
+  expect(await page.getByAltText('Transmissão ao vivo').evaluate((image: HTMLImageElement) => image.naturalWidth)).toBeGreaterThan(0)
+  const liveCorners = await page.locator('.cover-shell').evaluate((shell) => ({
+    container: getComputedStyle(shell).borderRadius,
+    image: getComputedStyle(shell.querySelector('img')!).borderRadius,
+  }))
+  expect(liveCorners.image).toBe(liveCorners.container)
   await expect(page.getByRole('button', { name: 'Pausar' })).toBeDisabled()
   await expect(page.getByRole('button', { name: 'Próxima faixa' })).toBeDisabled()
 })

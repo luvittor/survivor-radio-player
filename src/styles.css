@@ -42,7 +42,7 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .now-playing::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,10,17,.05), #07111c 85%); pointer-events: none; }
 .now-content { position: relative; z-index: 2; width: min(100%, 1040px); margin: 0 auto; padding: 22px 22px 30px; display: grid; gap: 26px; }
 .cover-shell { width: min(100%, 410px); aspect-ratio: 1; margin: 0 auto; position: relative; border-radius: 28px; overflow: hidden; box-shadow: 0 28px 70px rgba(0,0,0,.48), 0 0 0 1px rgba(255,255,255,.08); background: #0c1b2a; }
-.cover-art { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover-art { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: inherit; }
 .paused-overlay { position: absolute; inset: 0; display: grid; place-items: center; background: rgba(3,8,14,.58); backdrop-filter: blur(4px); color: white; font: 800 clamp(22px, 8vw, 40px)/1 ui-sans-serif, system-ui, sans-serif; letter-spacing: .22em; text-indent: .22em; }
 .live-badge { position: absolute; top: 16px; left: 16px; display: flex; align-items: center; gap: 7px; padding: 8px 11px; border-radius: 999px; background: #ed334b; color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .13em; box-shadow: 0 6px 20px rgba(237,51,75,.35); }
 .live-badge span { width: 7px; height: 7px; border-radius: 50%; background: white; animation: livePulse 1.4s infinite; }
