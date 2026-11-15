@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { runControl, selectFolder, selectTrack } from './api'
 import { Albums } from './components/Albums'
 import { Icon } from './components/Icons'
@@ -11,8 +11,10 @@ type Tab = 'now' | 'albums'
 export default function App() {
   const [tab, setTab] = useState<Tab>('now')
   const [foldersMounted, setFoldersMounted] = useState(false)
+  const [albumNavigation, setAlbumNavigation] = useState<{ id: number; folder: string } | null>(null)
   const [pending, setPending] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const nowPanel = useRef<HTMLDivElement>(null)
   const { status, loading, error, refresh } = useRadioStatus()
 
   const perform = async (label: string, task: () => Promise<void>) => {
@@ -36,11 +38,22 @@ export default function App() {
     setFoldersMounted(true)
     setTab('albums')
   }
+  const openNow = () => {
+    if (nowPanel.current) nowPanel.current.scrollTop = 0
+    setTab('now')
+  }
+  const openCurrentAlbum = () => {
+    const folder = status?.current_folder
+    if (!folder || !status.current_media) return
+    setFoldersMounted(true)
+    setAlbumNavigation((previous) => ({ id: (previous?.id ?? 0) + 1, folder }))
+    setTab('albums')
+  }
 
   return (
     <div className="app-shell">
       <header className="app-header">
-        <button className="brand" onClick={() => setTab('now')} aria-label="Abrir Agora">
+        <button className="brand" onClick={openNow} aria-label="Abrir Agora">
           <img src={`${import.meta.env.BASE_URL}icon-192.png`} alt="" />
           <span><strong>Survivor</strong><small>RADIO PLAYER</small></span>
         </button>
@@ -49,12 +62,12 @@ export default function App() {
       </header>
 
       <main className="app-main">
-        <div className="tab-panel" data-tab-panel="now" hidden={tab !== 'now'}>
-          <NowPlaying status={status} loading={loading} pending={pending} onAction={handleAction} />
+        <div className="tab-panel" data-tab-panel="now" ref={nowPanel} hidden={tab !== 'now'}>
+          <NowPlaying status={status} loading={loading} pending={pending} onAction={handleAction} onOpenAlbum={openCurrentAlbum} />
         </div>
         {foldersMounted && (
           <div className="tab-panel" data-tab-panel="albums" hidden={tab !== 'albums'}>
-            <Albums status={status} pending={pending} onAction={handleAction} onSelectFolder={handleFolder} onSelectTrack={handleTrack} onOpenNow={() => setTab('now')} />
+            <Albums status={status} pending={pending} onAction={handleAction} onSelectFolder={handleFolder} onSelectTrack={handleTrack} onOpenNow={openNow} onOpenAlbum={openCurrentAlbum} albumNavigation={albumNavigation} visible={tab === 'albums'} />
           </div>
         )}
       </main>
@@ -62,7 +75,7 @@ export default function App() {
       {(notice || error) && <div className="toast" role="status"><Icon name="radio" /><span>{notice || `Sem conexão: ${error}`}</span><button onClick={() => { setNotice(null); void refresh(true) }} aria-label="Tentar novamente"><Icon name="refresh" /></button></div>}
 
       <nav className="tab-bar" aria-label="Navegação principal">
-        <button className={tab === 'now' ? 'active' : ''} onClick={() => setTab('now')}><Icon name="radio" /><span>Agora</span></button>
+        <button className={tab === 'now' ? 'active' : ''} onClick={openNow}><Icon name="radio" /><span>Agora</span></button>
         <button className={tab === 'albums' ? 'active' : ''} onClick={openFolders}><Icon name="albums" /><span>Pastas</span></button>
       </nav>
     </div>

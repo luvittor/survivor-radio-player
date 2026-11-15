@@ -11,9 +11,10 @@ type Props = {
   loading: boolean
   pending: string | null
   onAction: (action: 'previous' | 'restart' | 'pause' | 'play' | 'next') => void
+  onOpenAlbum?: () => void
 }
 
-export function NowPlaying({ status, loading, pending, onAction }: Props) {
+export function NowPlaying({ status, loading, pending, onAction, onOpenAlbum }: Props) {
   const live = isLive(status)
   const media = status?.current_media
   const duration = media?.duration_seconds
@@ -29,7 +30,9 @@ export function NowPlaying({ status, loading, pending, onAction }: Props) {
       <div className="artwork-backdrop" style={{ backgroundImage: `url(${JSON.stringify(backdrop).slice(1, -1)})` }} />
       <div className="now-content">
         <div className="cover-shell">
-          <Artwork className="cover-art" src={artwork} cacheKey={mediaKey} live={live} alt={live ? 'Transmissão ao vivo' : media?.album ? `Capa de ${media.album}` : 'Capa da mídia atual'} />
+          <button className="cover-open" disabled={!status?.current_folder || !media || live} onClick={onOpenAlbum} aria-label={`Abrir álbum ${media?.album || status?.current_folder || 'atual'}`}>
+            <Artwork className="cover-art" src={artwork} cacheKey={mediaKey} live={live} alt={live ? 'Transmissão ao vivo' : media?.album ? `Capa de ${media.album}` : 'Capa da mídia atual'} />
+          </button>
           {status?.paused && <span className="paused-overlay">PAUSED</span>}
           {live && <span className="live-badge"><span /> LIVE</span>}
         </div>

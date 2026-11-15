@@ -165,3 +165,61 @@ test('mantém a rolagem da lista ao voltar do detalhe de um álbum', async ({ pa
   await expect(list).toBeVisible()
   expect(await list.evaluate((element) => element.scrollTop)).toBe(savedScroll)
 })
+
+test('as capas abrem o álbum atual e posicionam seu cartão na lista', async ({ page }) => {
+  const survivor = await mockSurvivor(page)
+  const folders = Array.from({ length: 40 }, (_, index) => ({
+    folder: `Album ${String(index + 1).padStart(2, '0')}`,
+    name: `Album ${String(index + 1).padStart(2, '0')}`,
+  }))
+  survivor.externalUpdate({ current_folder: 'Album 30', current_media: { ...mockLibrary['Flash Balada'][0], album: 'Album 30', path: 'Album 30/01 Because You Loved Me.mp3' } })
+  await page.route('**/api/control/catalog*', (route) => {
+    const folder = new URL(route.request().url()).searchParams.get('folder')
+    return json(route, folder
+      ? { folder, exists: true, subfolders: [], tracks: [] }
+      : { track_count: 0, folder_count: folders.length, folders })
+  })
+  await page.goto('./')
+
+  await page.getByRole('button', { name: 'Abrir álbum Album 30' }).click()
+  await expect(page.getByRole('heading', { name: 'Album 30' })).toBeVisible()
+  const list = page.locator('[data-catalog-screen="list"]')
+  expect(await list.evaluate((element) => element.scrollTop)).toBeGreaterThan(0)
+  await page.getByRole('button', { name: 'Voltar' }).click()
+  await expect(page.getByRole('button', { name: 'Abrir pasta Album 30' })).toBeInViewport()
+
+  await page.getByRole('button', { name: 'Abrir álbum Album 30' }).click()
+  await expect(page.getByRole('heading', { name: 'Album 30' })).toBeVisible()
+})
+
+test('compacto fica acima do menu e Agora volta centralizado no celular', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 650 })
+  await mockSurvivor(page)
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Pastas' }).click()
+  await expect(page.locator('.mini-player')).toBeVisible()
+
+  const compact = await page.locator('.mini-player').boundingBox()
+  const cover = await page.locator('.mini-player-cover').boundingBox()
+  const menu = await page.locator('.tab-bar').boundingBox()
+  expect(compact).not.toBeNull()
+  expect(cover).not.toBeNull()
+  expect(menu).not.toBeNull()
+  expect(compact!.y + compact!.height).toBeLessThanOrEqual(menu!.y + 1)
+  const topMargin = cover!.y - compact!.y
+  const bottomMargin = compact!.y + compact!.height - cover!.y - cover!.height
+  expect(Math.abs(topMargin - bottomMargin)).toBeLessThanOrEqual(1)
+
+  await page.setViewportSize({ width: 390, height: 850 })
+  await page.getByRole('button', { name: 'Abrir tela Agora pelo player compacto' }).click()
+  await expect(page.getByRole('heading', { name: 'Because You Loved Me' })).toBeVisible()
+  const layout = await page.evaluate(() => {
+    const main = document.querySelector('.app-main')!.getBoundingClientRect()
+    const content = document.querySelector('.now-content')!.getBoundingClientRect()
+    const panel = document.querySelector<HTMLElement>('[data-tab-panel="now"]')!
+    return { topGap: content.top - main.top, bottomGap: main.bottom - content.bottom, scrollTop: panel.scrollTop }
+  })
+  expect(layout.scrollTop).toBe(0)
+  expect(layout.topGap).toBeGreaterThan(10)
+  expect(Math.abs(layout.topGap - layout.bottomGap)).toBeLessThan(30)
+})

@@ -97,6 +97,20 @@ describe('aplicativo integrado ao servidor simulado', () => {
     expect(document.querySelector('[data-tab-panel="albums"]')).toHaveAttribute('hidden')
   })
 
+  it('abre o detalhe do álbum atual pela capa de Agora e pela capa compacta', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Because You Loved Me' })
+
+    await user.click(screen.getByRole('button', { name: 'Abrir álbum Flash Balada' }))
+    expect(await screen.findByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Voltar' }))
+    expect(screen.getByRole('heading', { name: 'Pastas' })).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Abrir álbum Flash Balada' }))
+    expect(await screen.findByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
+  })
+
   it('mostra o estado offline e permite tentar novamente', async () => {
     server.use(http.get(/\/(?:api\/)?status$/, () => HttpResponse.json({}, { status: 503 })))
     const user = userEvent.setup()

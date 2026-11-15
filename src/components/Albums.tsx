@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { getCatalog } from '../api'
 import type { CatalogDetail, CatalogFolder, CatalogRoot, RadioStatus } from '../types'
 import { formatTrackNumber, isLive, joinArtist, naturalCompare } from '../utils'
@@ -13,13 +14,16 @@ type Props = {
   onSelectFolder: (folder: string) => Promise<void>
   onSelectTrack: (folder: string, track: string) => Promise<void>
   onOpenNow: () => void
+  onOpenAlbum?: () => void
+  albumNavigation?: { id: number; folder: string } | null
+  visible?: boolean
 }
 
 function isRoot(data: CatalogRoot | CatalogDetail): data is CatalogRoot {
   return 'folders' in data
 }
 
-export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrack, onOpenNow }: Props) {
+export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrack, onOpenNow, onOpenAlbum, albumNavigation, visible = true }: Props) {
   const [root, setRoot] = useState<CatalogRoot | null>(null)
   const [detailData, setDetailData] = useState<CatalogDetail | null>(null)
   const [folder, setFolder] = useState<string | undefined>()
@@ -32,6 +36,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   const [rootReload, setRootReload] = useState(0)
   const [detailReload, setDetailReload] = useState(0)
   const detailScreen = useRef<HTMLElement>(null)
+  const listScreen = useRef<HTMLElement>(null)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -55,6 +60,25 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
       .finally(() => { if (!controller.signal.aborted) setDetailLoading(false) })
     return () => controller.abort()
   }, [folder, detailReload])
+
+  useEffect(() => {
+    if (!root || !albumNavigation) return
+    const timer = window.setTimeout(() => {
+      if (query) {
+        setQuery('')
+        return
+      }
+      const list = listScreen.current
+      const card = Array.from(list?.querySelectorAll<HTMLElement>('[data-folder]') ?? []).find((item) => item.dataset.folder === albumNavigation.folder)
+      if (list && card) list.scrollTop += card.getBoundingClientRect().top - list.getBoundingClientRect().top - 28
+      if (detailScreen.current) detailScreen.current.scrollTop = 0
+      setDetailLoading(true)
+      setDetailError(null)
+      setDetailQuery('')
+      setFolder(albumNavigation.folder)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [root, albumNavigation, query])
 
   const detail = detailData?.folder === folder ? detailData : null
   const parent = folder?.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : undefined
@@ -91,7 +115,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
       </label>
       <div className="album-grid">
         {filtered.map((item) => (
-          <article key={item.folder} className={`album-card${status?.current_folder === item.folder ? ' album-card--active' : ''}`}>
+          <article key={item.folder} data-folder={item.folder} className={`album-card${status?.current_folder === item.folder ? ' album-card--active' : ''}`}>
             <button className="album-open" onClick={() => openFolder(item)} aria-label={`Abrir pasta ${item.name}`}>
               <span className="album-cover">
                 <Artwork src={item.artwork_url} alt="" />
@@ -110,7 +134,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
 
   return (
     <>
-      <section className="albums-page catalog-screen" data-catalog-screen="list" aria-labelledby="albums-title" aria-hidden={Boolean(folder)} inert={Boolean(folder)}>
+      <section className="albums-page catalog-screen" data-catalog-screen="list" ref={listScreen} aria-labelledby="albums-title" aria-hidden={Boolean(folder)} inert={Boolean(folder)}>
         {rootLoading && !root && <div className="catalog-state"><span className="spinner" /> Abrindo sua coleção…</div>}
         {rootError && !root && <div className="catalog-state catalog-state--error"><Icon name="radio" /><strong>Catálogo indisponível</strong><span>{rootError}</span><button onClick={() => { setRootLoading(true); setRootError(null); setRootReload((value) => value + 1) }}>Tentar novamente</button></div>}
         {root && <>
@@ -157,9 +181,11 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         </>}
       </section>
 
-      <div className="mini-player">
-        <button className="mini-player-open" onClick={onOpenNow} aria-label="Abrir tela Agora pelo player compacto">
+      {visible && createPortal(<div className="mini-player">
+        <button className="mini-player-cover" disabled={!status?.current_folder || !status.current_media || live} onClick={onOpenAlbum} aria-label={`Abrir álbum ${status?.current_media?.album || status?.current_folder || 'atual'}`}>
           <Artwork src={status?.current_media?.artwork?.available ? status.current_media.artwork.url : undefined} cacheKey={status?.current_media?.path} live={live} alt="" />
+        </button>
+        <button className="mini-player-open" onClick={onOpenNow} aria-label="Abrir tela Agora pelo player compacto">
           <span className="mini-player-copy">
             <strong>{live ? 'Ao vivo' : <>{compactTrackNumber && `${compactTrackNumber}. `}{status?.current_media?.title || status?.current_media?.filename || 'Nada tocando'}</>}</strong>
             <span>{live ? 'Sinal externo conectado' : joinArtist(status)}</span>
@@ -167,7 +193,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
           </span>
         </button>
         <PlayerControls compact paused={Boolean(status?.paused)} disabled={!status || live || Boolean(pending)} pending={pending} onAction={onAction} />
-      </div>
+      </div>, document.body)}
     </>
   )
 }
