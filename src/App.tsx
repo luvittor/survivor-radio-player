@@ -54,7 +54,7 @@ export default function App() {
         </div>
         {foldersMounted && (
           <div className="tab-panel" data-tab-panel="albums" hidden={tab !== 'albums'}>
-            <Albums status={status} pending={pending} onAction={handleAction} onSelectFolder={handleFolder} onSelectTrack={handleTrack} />
+            <Albums status={status} pending={pending} onAction={handleAction} onSelectFolder={handleFolder} onSelectTrack={handleTrack} onOpenNow={() => setTab('now')} />
           </div>
         )}
       </main>

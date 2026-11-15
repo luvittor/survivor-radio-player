@@ -135,4 +135,33 @@ test('navega na interface mobile sem overflow e preserva a pasta entre abas', as
   await page.getByRole('button', { name: 'Agora', exact: true }).click()
   await page.getByRole('button', { name: 'Pastas' }).click()
   await expect(page.getByRole('heading', { name: 'Flash Balada' })).toBeVisible()
+  await page.getByRole('button', { name: 'Abrir tela Agora pelo player compacto' }).click()
+  await expect(page.getByRole('heading', { name: 'Voltage' })).toBeVisible()
+})
+
+test('mantém a rolagem da lista ao voltar do detalhe de um álbum', async ({ page }) => {
+  await mockSurvivor(page)
+  const folders = Array.from({ length: 40 }, (_, index) => ({
+    folder: `Album ${String(index + 1).padStart(2, '0')}`,
+    name: `Album ${String(index + 1).padStart(2, '0')}`,
+  }))
+  await page.route('**/api/control/catalog*', (route) => {
+    const folder = new URL(route.request().url()).searchParams.get('folder')
+    return json(route, folder
+      ? { folder, exists: true, subfolders: [], tracks: [] }
+      : { track_count: 0, folder_count: folders.length, folders })
+  })
+  await page.goto('./')
+  await page.getByRole('button', { name: 'Pastas' }).click()
+
+  const list = page.locator('[data-catalog-screen="list"]')
+  await expect(list).toBeVisible()
+  await list.evaluate((element) => { element.scrollTop = 650 })
+  await page.getByRole('button', { name: 'Abrir pasta Album 07' }).click()
+  const savedScroll = await list.evaluate((element) => element.scrollTop)
+  expect(savedScroll).toBeGreaterThan(0)
+
+  await page.getByRole('button', { name: 'Voltar' }).click()
+  await expect(list).toBeVisible()
+  expect(await list.evaluate((element) => element.scrollTop)).toBe(savedScroll)
 })

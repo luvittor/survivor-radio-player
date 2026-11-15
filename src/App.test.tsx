@@ -62,18 +62,39 @@ describe('aplicativo integrado ao servidor simulado', () => {
     await user.click(screen.getByRole('button', { name: 'Abrir pasta Flash Balada' }))
     expect(await screen.findByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
 
-    const foldersPanel = document.querySelector<HTMLElement>('[data-tab-panel="albums"]')
-    expect(foldersPanel).not.toBeNull()
-    foldersPanel!.scrollTop = 240
+    const listScreen = document.querySelector<HTMLElement>('[data-catalog-screen="list"]')
+    expect(listScreen).not.toBeNull()
+    listScreen!.scrollTop = 240
 
     await user.click(screen.getByRole('button', { name: 'Agora' }))
     await user.click(screen.getByRole('button', { name: 'Pastas' }))
 
     expect(screen.getByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
-    expect(foldersPanel!.scrollTop).toBe(240)
+    expect(listScreen!.scrollTop).toBe(240)
 
+    await user.click(screen.getByRole('button', { name: 'Voltar' }))
+    expect(listScreen).toHaveAttribute('aria-hidden', 'false')
+    expect(listScreen!.scrollTop).toBe(240)
+
+    await user.click(screen.getByRole('button', { name: 'Abrir pasta Flash Balada' }))
+    await screen.findByRole('heading', { name: 'Flash Balada' })
     await user.click(screen.getByRole('button', { name: /Total Eclipse of the Heart/ }))
     expect(getMockState().commands).toContain('select-track:Flash Balada/02 Total Eclipse of the Heart.mp3')
+  })
+
+  it('abre Agora pelo player compacto sem confundir com os controles', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Because You Loved Me' })
+    await user.click(screen.getByRole('button', { name: 'Pastas' }))
+    await screen.findByRole('heading', { name: 'Pastas' })
+
+    await user.click(screen.getByRole('button', { name: 'Pausar' }))
+    expect(document.querySelector('[data-tab-panel="albums"]')).not.toHaveAttribute('hidden')
+
+    await user.click(screen.getByRole('button', { name: 'Abrir tela Agora pelo player compacto' }))
+    expect(document.querySelector('[data-tab-panel="now"]')).not.toHaveAttribute('hidden')
+    expect(document.querySelector('[data-tab-panel="albums"]')).toHaveAttribute('hidden')
   })
 
   it('mostra o estado offline e permite tentar novamente', async () => {
