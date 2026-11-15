@@ -12,6 +12,7 @@ export type Media = {
   artist?: string
   album_artist?: string
   album?: string
+  track_number?: string | number | null
   duration_seconds?: number
   artwork?: Artwork
 }

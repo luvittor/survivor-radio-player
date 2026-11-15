@@ -115,7 +115,6 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .track-row { width: 100%; padding: 13px 4px; border: 0; border-bottom: 1px solid rgba(255,255,255,.07); background: transparent; display: grid; grid-template-columns: 36px minmax(0,1fr) auto; align-items: center; gap: 9px; text-align: left; cursor: pointer; }
 .track-row:hover { background: rgba(255,255,255,.025); }
 .track-number { color: #71869a; font-size: 11px; text-align: center; font-variant-numeric: tabular-nums; }
-.track-number svg { width: 17px; color: var(--cyan); }
 .track-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .track-copy strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
 .track-copy span, .track-duration { color: var(--muted); font-size: 11px; }

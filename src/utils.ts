@@ -28,3 +28,9 @@ export function joinArtist(status: RadioStatus | null): string {
   const media = status?.current_media
   return media?.artist || media?.album_artist || 'Survivor Radio'
 }
+
+export function formatTrackNumber(value?: string | number | null): string | null {
+  const match = String(value ?? '').trim().match(/^(\d+)(?:\s*\/\s*\d+)?$/)
+  if (!match || Number(match[1]) < 1) return null
+  return String(Number(match[1])).padStart(2, '0')
+}

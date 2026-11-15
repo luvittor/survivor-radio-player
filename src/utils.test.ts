@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { RadioStatus } from './types'
-import { formatTime, isLive, joinArtist, naturalCompare } from './utils'
+import { formatTime, formatTrackNumber, isLive, joinArtist, naturalCompare } from './utils'
 
 const status: RadioStatus = {
   mode: 'fallback-catalog',
@@ -14,6 +14,15 @@ describe('player helpers', () => {
     expect(formatTime(12.9)).toBe('0:12')
     expect(formatTime(3671)).toBe('1:01:11')
     expect(formatTime(undefined)).toBe('—:—')
+  })
+
+  it('formata apenas números válidos da tag de faixa', () => {
+    expect(formatTrackNumber('1')).toBe('01')
+    expect(formatTrackNumber('2/12')).toBe('02')
+    expect(formatTrackNumber(15)).toBe('15')
+    expect(formatTrackNumber(null)).toBeNull()
+    expect(formatTrackNumber('0')).toBeNull()
+    expect(formatTrackNumber('')).toBeNull()
   })
 
   it('detects live mode from either backend signal', () => {

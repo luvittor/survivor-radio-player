@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getCatalog } from '../api'
 import type { CatalogDetail, CatalogFolder, CatalogRoot, RadioStatus } from '../types'
-import { isLive, joinArtist, naturalCompare } from '../utils'
+import { formatTrackNumber, isLive, joinArtist, naturalCompare } from '../utils'
 import { Artwork } from './Artwork'
 import { Icon } from './Icons'
 import { PlayerControls } from './PlayerControls'
@@ -44,6 +44,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   const detail = data && !isRoot(data) ? data : null
   const parent = folder?.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : undefined
   const live = isLive(status)
+  const compactTrackNumber = !live && formatTrackNumber(status?.current_media?.track_number)
 
   const openFolder = (item: CatalogFolder) => {
     setLoading(true)
@@ -101,11 +102,11 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
 
       {detail && detail.tracks.length > 0 && (
         <div className="track-list" aria-label="Faixas">
-          {detail.tracks.map((item, index) => {
+          {detail.tracks.map((item) => {
             const selected = status?.current_media?.path === item.metadata?.path || status?.current_media?.filename === item.track
             return (
               <button key={`${item.index}-${item.track}`} className={selected ? 'track-row track-row--active' : 'track-row'} disabled={live || Boolean(pending)} onClick={() => void onSelectTrack(detail.folder, item.track)}>
-                <span className="track-number">{selected ? <Icon name="music" /> : String(index + 1).padStart(2, '0')}</span>
+                <span className="track-number">{formatTrackNumber(item.metadata?.track_number)}</span>
                 <span className="track-copy"><strong>{item.metadata?.title || item.name || item.track}</strong><span>{item.metadata?.artist || item.metadata?.album_artist || detail.folder}</span></span>
                 {item.metadata?.duration_seconds != null && <span className="track-duration">{Math.floor(item.metadata.duration_seconds / 60)}:{String(Math.floor(item.metadata.duration_seconds % 60)).padStart(2, '0')}</span>}
               </button>
@@ -118,7 +119,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
 
       <div className="mini-player">
         <Artwork src={status?.current_media?.artwork?.available ? status.current_media.artwork.url : undefined} cacheKey={status?.current_media?.path} live={live} alt="" />
-        <div><strong>{live ? 'Ao vivo' : status?.current_media?.title || status?.current_media?.filename || 'Nada tocando'}</strong><span>{live ? 'Sinal externo conectado' : joinArtist(status)}</span></div>
+        <div><strong>{live ? 'Ao vivo' : <>{compactTrackNumber && `${compactTrackNumber}. `}{status?.current_media?.title || status?.current_media?.filename || 'Nada tocando'}</>}</strong><span>{live ? 'Sinal externo conectado' : joinArtist(status)}</span></div>
         <PlayerControls compact paused={Boolean(status?.paused)} disabled={!status || live || Boolean(pending)} pending={pending} onAction={onAction} />
       </div>
     </section>

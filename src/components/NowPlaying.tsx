@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { versionedArtworkUrl } from '../api'
 import type { RadioStatus } from '../types'
-import { formatTime, isLive, joinArtist } from '../utils'
+import { formatTime, formatTrackNumber, isLive, joinArtist } from '../utils'
 import { Artwork } from './Artwork'
 import { MarqueeText } from './MarqueeText'
 import { PlayerControls } from './PlayerControls'
@@ -17,6 +17,7 @@ export function NowPlaying({ status, loading, pending, onAction }: Props) {
   const live = isLive(status)
   const media = status?.current_media
   const duration = media?.duration_seconds
+  const trackNumber = formatTrackNumber(media?.track_number)
 
   const artwork = media?.artwork?.available ? media.artwork.url : undefined
   const mediaKey = media?.path
@@ -35,6 +36,7 @@ export function NowPlaying({ status, loading, pending, onAction }: Props) {
 
         <div className="track-info">
           {live && <p className="eyebrow">TRANSMISSÃO DA REDE</p>}
+          {!live && trackNumber && <p className="eyebrow">FAIXA {trackNumber}</p>}
           <h1 id="now-title"><MarqueeText>{loading && !status ? 'Conectando…' : live ? 'Ao vivo' : media?.title || media?.filename || 'Nada tocando agora'}</MarqueeText></h1>
           <p className="artist"><MarqueeText>{live ? 'Sinal externo conectado' : joinArtist(status)}</MarqueeText></p>
           {!live && media?.album && <p className="album"><MarqueeText>{media.album}</MarqueeText></p>}
