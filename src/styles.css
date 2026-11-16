@@ -99,8 +99,6 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .detail-heading-copy { min-width: 0; }
 .back-button { border: 0; background: none; padding: 0; margin: 0 0 22px; color: #afbdca; display: flex; align-items: center; gap: 2px; font-size: 12px; cursor: pointer; }
 .back-button svg { width: 18px; }
-.play-folder { flex: none; margin-bottom: 4px; border: 0; padding: 11px 14px; border-radius: 12px; background: rgba(18,200,239,.12); color: var(--cyan); font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
-.play-folder svg { width: 16px; fill: currentColor; }
 .search-box { height: 48px; padding: 0 15px; margin-bottom: 23px; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.055); border: 1px solid rgba(255,255,255,.08); border-radius: 15px; color: #7f93a7; }
 .search-box:focus-within { border-color: rgba(18,200,239,.5); box-shadow: 0 0 0 3px rgba(18,200,239,.08); }
 .search-box svg { width: 19px; }
@@ -166,7 +164,6 @@ button:disabled { cursor: not-allowed; opacity: .38; }
   .detail-heading-main { gap: 12px; }
   .detail-album-cover { width: 72px; border-radius: 12px; }
   .albums-heading--detail { gap: 10px; }
-  .albums-heading--detail .play-folder { padding: 9px 10px; font-size: 11px; }
   .play-button { width: clamp(58px, 8svh, 68px); height: clamp(58px, 8svh, 68px); }
 }
 

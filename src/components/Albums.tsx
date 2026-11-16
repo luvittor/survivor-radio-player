@@ -186,7 +186,6 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
                 <p>{detail.tracks.length} faixas{detail.subfolders.length ? ` · ${detail.subfolders.length} pastas` : ''}</p>
               </div>
             </div>
-            {!live && <button className="play-folder" disabled={Boolean(pending)} onClick={() => void onSelectFolder(detail.folder)}><Icon name="play" /> Tocar pasta</button>}
           </div>
           {renderFolders(detail.subfolders, detailQuery, setDetailQuery)}
           {detail.tracks.length > 0 && (
