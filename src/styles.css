@@ -92,6 +92,11 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .albums-heading { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 22px; }
 .albums-heading h1 { font-size: clamp(28px, 8vw, 46px); overflow-wrap: anywhere; }
 .albums-heading p:last-child { color: var(--muted); margin: 8px 0 0; font-size: 13px; }
+.albums-heading--detail { align-items: center; }
+.detail-heading-main { min-width: 0; display: flex; align-items: center; gap: 16px; }
+.detail-album-cover { width: 88px; aspect-ratio: 1; flex: none; overflow: hidden; border-radius: 14px; background: #0e1d2d; border: 1px solid rgba(255,255,255,.08); box-shadow: 0 10px 24px rgba(0,0,0,.25); }
+.detail-album-cover img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.detail-heading-copy { min-width: 0; }
 .back-button { border: 0; background: none; padding: 0; margin: 0 0 22px; color: #afbdca; display: flex; align-items: center; gap: 2px; font-size: 12px; cursor: pointer; }
 .back-button svg { width: 18px; }
 .play-folder { flex: none; margin-bottom: 4px; border: 0; padding: 11px 14px; border-radius: 12px; background: rgba(18,200,239,.12); color: var(--cyan); font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
@@ -158,6 +163,10 @@ button:disabled { cursor: not-allowed; opacity: .38; }
   .progress-block { margin-top: clamp(14px, 2.5svh, 25px); margin-bottom: 8px; }
   .player-controls { min-height: clamp(62px, 9svh, 78px); }
   .player-controls--compact { min-height: 0; }
+  .detail-heading-main { gap: 12px; }
+  .detail-album-cover { width: 72px; border-radius: 12px; }
+  .albums-heading--detail { gap: 10px; }
+  .albums-heading--detail .play-folder { padding: 9px 10px; font-size: 11px; }
   .play-button { width: clamp(58px, 8svh, 68px); height: clamp(58px, 8svh, 68px); }
 }
 

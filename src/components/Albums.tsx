@@ -81,6 +81,29 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   }, [root, albumNavigation, query])
 
   const detail = detailData?.folder === folder ? detailData : null
+
+  useEffect(() => {
+    if (!albumNavigation || folder !== albumNavigation.folder || !detail) return
+    const frame = window.requestAnimationFrame(() => {
+      const screen = detailScreen.current
+      const currentTrack = screen?.querySelector<HTMLElement>('[data-current-track="true"]')
+      if (!screen || !currentTrack) return
+
+      const screenBounds = screen.getBoundingClientRect()
+      const trackBounds = currentTrack.getBoundingClientRect()
+      const fullyVisible = trackBounds.top >= screenBounds.top && trackBounds.bottom <= screenBounds.bottom
+      if (fullyVisible) return
+
+      const trackTop = trackBounds.top - screenBounds.top + screen.scrollTop
+      const centeredTop = trackTop - (screen.clientHeight - currentTrack.offsetHeight) / 2
+      screen.scrollTo({
+        top: Math.max(0, centeredTop),
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [albumNavigation, detail, folder])
+
   const parent = folder?.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : undefined
   const live = isLive(status)
   const compactTrackNumber = !live && formatTrackNumber(status?.current_media?.track_number)
@@ -140,7 +163,6 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         {root && <>
           <div className="albums-heading">
             <div>
-              <p className="eyebrow">SUA COLEÇÃO</p>
               <h1 id="albums-title">Pastas</h1>
               <p>{root.folder_count} pastas · {root.track_count} faixas</p>
             </div>
@@ -154,11 +176,15 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         {detailLoading && !detail && <div className="catalog-state"><span className="spinner" /> Abrindo pasta…</div>}
         {detailError && !detail && <div className="catalog-state catalog-state--error"><Icon name="radio" /><strong>Pasta indisponível</strong><span>{detailError}</span><button onClick={() => { setDetailLoading(true); setDetailError(null); setDetailReload((value) => value + 1) }}>Tentar novamente</button></div>}
         {detail && <>
-          <div className="albums-heading">
-            <div>
-              <p className="eyebrow">SUA COLEÇÃO</p>
-              <h1 id="detail-title">{detail.folder.split('/').at(-1)}</h1>
-              <p>{detail.tracks.length} faixas{detail.subfolders.length ? ` · ${detail.subfolders.length} pastas` : ''}</p>
+          <div className="albums-heading albums-heading--detail">
+            <div className="detail-heading-main">
+              <div className="detail-album-cover">
+                <Artwork src={detail.artwork_url} alt={`Capa de ${detail.folder.split('/').at(-1)}`} />
+              </div>
+              <div className="detail-heading-copy">
+                <h1 id="detail-title">{detail.folder.split('/').at(-1)}</h1>
+                <p>{detail.tracks.length} faixas{detail.subfolders.length ? ` · ${detail.subfolders.length} pastas` : ''}</p>
+              </div>
             </div>
             {!live && <button className="play-folder" disabled={Boolean(pending)} onClick={() => void onSelectFolder(detail.folder)}><Icon name="play" /> Tocar pasta</button>}
           </div>
@@ -168,7 +194,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
               {detail.tracks.map((item) => {
                 const selected = status?.current_media?.path === item.metadata?.path || status?.current_media?.filename === item.track
                 return (
-                  <button key={`${item.index}-${item.track}`} className={selected ? 'track-row track-row--active' : 'track-row'} disabled={live || Boolean(pending)} onClick={() => void onSelectTrack(detail.folder, item.track)}>
+                  <button key={`${item.index}-${item.track}`} data-current-track={selected ? 'true' : undefined} className={selected ? 'track-row track-row--active' : 'track-row'} disabled={live || Boolean(pending)} onClick={() => void onSelectTrack(detail.folder, item.track)}>
                     <span className="track-number">{formatTrackNumber(item.metadata?.track_number)}</span>
                     <span className="track-copy"><strong>{item.metadata?.title || item.name || item.track}</strong><span>{item.metadata?.artist || item.metadata?.album_artist || detail.folder}</span></span>
                     {item.metadata?.duration_seconds != null && <span className="track-duration">{Math.floor(item.metadata.duration_seconds / 60)}:{String(Math.floor(item.metadata.duration_seconds % 60)).padStart(2, '0')}</span>}
