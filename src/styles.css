@@ -56,6 +56,8 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 
 .track-info { text-align: center; min-width: 0; }
 .eyebrow { margin: 0 0 9px; color: var(--cyan); font-size: 10px; font-weight: 800; letter-spacing: .2em; }
+.track-labels { width: fit-content; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 0 auto 9px 0; }
+.track-label { display: inline-block; padding: 2px 5px; border: 1px solid rgba(18,200,239,.5); border-radius: 3px; background: transparent; color: var(--cyan); font-size: 10px; font-weight: 400; letter-spacing: .2em; }
 .track-info h1, .albums-heading h1 { margin: 0; font: 800 clamp(24px, 7vw, 38px)/1.12 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.045em; }
 .track-info h1 { min-width: 0; }
 .artist { min-width: 0; margin: 9px 0 0; color: #c5d0dc; font-size: 15px; }
@@ -145,6 +147,9 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .mini-player strong, .mini-player span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mini-player strong { font-size: 12px; }
 .mini-player span { color: var(--muted); font-size: 10px; }
+.mini-player .mini-player-meta { min-width: 0; display: flex; align-items: center; gap: 5px; }
+.mini-player .mini-player-folder { min-width: 0; flex: 0 1 auto; }
+.mini-player .mini-player-badge { flex: none; padding: 2px 5px; border: 1px solid rgba(18,200,239,.5); border-radius: 3px; color: var(--cyan); font-size: 9px; }
 .player-controls--compact { min-height: auto; gap: 1px; }
 .player-controls--compact .icon-button { display: none; width: 34px; height: 34px; }
 .player-controls--compact .play-button { width: 42px; height: 42px; box-shadow: none; }
@@ -158,6 +163,7 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 @media (max-width: 679px) {
   .now-content { padding: clamp(10px, 2.4svh, 22px) 22px 18px; gap: clamp(12px, 2.2svh, 22px); }
   .cover-shell { width: min(88vw, 38svh, 360px); }
+  .track-labels { margin-left: auto; margin-right: auto; }
   .progress-block { margin-top: clamp(14px, 2.5svh, 25px); margin-bottom: 8px; }
   .player-controls { min-height: clamp(62px, 9svh, 78px); }
   .player-controls--compact { min-height: 0; }

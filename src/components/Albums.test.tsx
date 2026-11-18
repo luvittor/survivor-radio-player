@@ -6,17 +6,24 @@ import { initialStatus, makeFolderDetail, mockFolders } from '../test/mockData'
 import { server } from '../test/server'
 import { Albums } from './Albums'
 
-describe('Pastas', () => {
-  it('prefixa o título compacto somente quando a tag de faixa existe', async () => {
+describe('Coleção', () => {
+  it('mostra pasta, disco e faixa em linhas compactas sem incluir o álbum da tag', async () => {
     const status = initialStatus()
+    status.current_folder = 'Playlists/Flash Balada - Disc 2'
+    status.current_media = { ...status.current_media!, album: 'Album da tag', track_number: '1/12' }
     const props = { pending: null, onAction: vi.fn(), onSelectFolder: vi.fn(), onSelectTrack: vi.fn(), onOpenNow: vi.fn() }
     const { rerender } = render(<Albums status={status} {...props} />)
-    await screen.findByRole('heading', { name: 'Pastas' })
+    await screen.findByRole('heading', { name: 'Coleção' })
     expect(screen.getByText('Because You Loved Me')).toBeInTheDocument()
-    expect(within(screen.getByRole('button', { name: 'Abrir tela Agora pelo player compacto' })).getByText('Flash Balada')).toBeInTheDocument()
+    const compactPlayer = within(screen.getByRole('button', { name: 'Abrir tela Agora pelo player compacto' }))
+    expect(compactPlayer.getByText('Flash Balada')).toBeInTheDocument()
+    expect(compactPlayer.getByText('Disco 2')).toBeInTheDocument()
+    expect(compactPlayer.getByText('Faixa 01')).toBeInTheDocument()
+    expect(compactPlayer.queryByText('Album da tag')).not.toBeInTheDocument()
 
-    rerender(<Albums status={{ ...status, current_media: { ...status.current_media!, track_number: '1/12' } }} {...props} />)
-    expect(screen.getByText('01. Because You Loved Me')).toBeInTheDocument()
+    rerender(<Albums status={{ ...status, current_media: { ...status.current_media!, track_number: undefined } }} {...props} />)
+    expect(compactPlayer.queryByText('Faixa 01')).not.toBeInTheDocument()
+    expect(compactPlayer.getByText('Because You Loved Me')).toBeInTheDocument()
   })
 
   it('toca uma pasta pelo botão sobre a capa sem abrir sua lista', async () => {
@@ -39,7 +46,7 @@ describe('Pastas', () => {
     await user.click(quickPlay)
 
     expect(onSelectFolder).toHaveBeenCalledWith('Flash Balada')
-    expect(screen.getByRole('heading', { name: 'Pastas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Coleção' })).toBeInTheDocument()
   })
 
   it('ordena, filtra, abre uma pasta e seleciona uma faixa', async () => {
@@ -64,7 +71,7 @@ describe('Pastas', () => {
     expect(onSelectTrack).toHaveBeenCalledWith('Flash Balada', '02 Total Eclipse of the Heart.mp3')
 
     await user.click(screen.getByRole('button', { name: 'Voltar' }))
-    expect(await screen.findByRole('heading', { name: 'Pastas' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Coleção' })).toBeInTheDocument()
   })
 
   it('mostra na lista somente o número da tag do MP3', async () => {

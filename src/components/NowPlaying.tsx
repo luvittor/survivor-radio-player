@@ -19,6 +19,9 @@ export function NowPlaying({ status, loading, pending, onAction, onOpenAlbum }: 
   const media = status?.current_media
   const duration = media?.duration_seconds
   const trackNumber = formatTrackNumber(media?.track_number)
+  const currentFolderName = status?.current_folder?.split(/[\\/]/).filter(Boolean).pop()
+  const discMatch = currentFolderName?.match(/(?:^|[\s_-])disc\s+(\d+)$/i)
+  const folderDisplayName = discMatch ? currentFolderName?.replace(/[\s_-]*disc\s+\d+$/i, '').trim() : currentFolderName
 
   const artwork = media?.artwork?.available ? media.artwork.url : undefined
   const mediaKey = media?.path
@@ -39,10 +42,15 @@ export function NowPlaying({ status, loading, pending, onAction, onOpenAlbum }: 
 
         <div className="track-info">
           {live && <p className="eyebrow">TRANSMISSÃO DA REDE</p>}
-          {!live && trackNumber && <p className="eyebrow">FAIXA {trackNumber}</p>}
+          {!live && (discMatch || trackNumber) && (
+            <div className="track-labels" aria-label={[discMatch && `Disco ${discMatch[1]}`, trackNumber && `Faixa ${trackNumber}`].filter(Boolean).join(' ')}>
+              {discMatch && <span className="track-label">Disco {discMatch[1]}</span>}
+              {trackNumber && <span className="track-label">Faixa {trackNumber}</span>}
+            </div>
+          )}
           <h1 id="now-title"><MarqueeText>{loading && !status ? 'Conectando…' : live ? 'Ao vivo' : media?.title || media?.filename || 'Nada tocando agora'}</MarqueeText></h1>
           <p className="artist"><MarqueeText>{live ? 'Sinal externo conectado' : joinArtist(status)}</MarqueeText></p>
-          {!live && media?.album && <p className="album"><MarqueeText>{media.album}</MarqueeText></p>}
+          {!live && folderDisplayName && <p className="album"><MarqueeText>{folderDisplayName}</MarqueeText></p>}
 
           <ProgressBlock key={`${media?.path}-${status?.position_seconds}-${status?.paused}`} initialPosition={status?.position_seconds ?? 0} duration={duration} running={Boolean(status && !status.paused && !live)} />
 

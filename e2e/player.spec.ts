@@ -120,7 +120,7 @@ test('navega na interface mobile sem overflow e preserva a pasta entre abas', as
   await expect(page.locator('.app-header')).toHaveCSS('position', 'fixed')
   await expect(page.locator('.tab-bar')).toHaveCSS('position', 'fixed')
 
-  await page.getByRole('button', { name: 'Pastas' }).click()
+  await page.getByRole('button', { name: 'Coleção' }).click()
   const folderNames = await page.locator('button[aria-label^="Abrir pasta "]').evaluateAll((buttons) =>
     buttons.map((button) => button.getAttribute('aria-label')),
   )
@@ -133,7 +133,7 @@ test('navega na interface mobile sem overflow e preserva a pasta entre abas', as
   await page.getByRole('button', { name: 'Abrir pasta Flash Balada' }).click()
   await expect(page.getByRole('heading', { name: 'Flash Balada' })).toBeVisible()
   await page.getByRole('button', { name: 'Agora', exact: true }).click()
-  await page.getByRole('button', { name: 'Pastas' }).click()
+  await page.getByRole('button', { name: 'Coleção' }).click()
   await expect(page.getByRole('heading', { name: 'Flash Balada' })).toBeVisible()
   await page.getByRole('button', { name: 'Abrir tela Agora pelo player compacto' }).click()
   await expect(page.getByRole('heading', { name: 'Voltage' })).toBeVisible()
@@ -152,7 +152,7 @@ test('mantém a rolagem da lista ao voltar do detalhe de um álbum', async ({ pa
       : { track_count: 0, folder_count: folders.length, folders })
   })
   await page.goto('./')
-  await page.getByRole('button', { name: 'Pastas' }).click()
+  await page.getByRole('button', { name: 'Coleção' }).click()
 
   const list = page.locator('[data-catalog-screen="list"]')
   await expect(list).toBeVisible()
@@ -196,7 +196,7 @@ test('compacto fica acima do menu e Agora volta centralizado no celular', async 
   await page.setViewportSize({ width: 390, height: 650 })
   await mockSurvivor(page)
   await page.goto('./')
-  await page.getByRole('button', { name: 'Pastas' }).click()
+  await page.getByRole('button', { name: 'Coleção' }).click()
   await expect(page.locator('.mini-player')).toBeVisible()
 
   const compact = await page.locator('.mini-player').boundingBox()

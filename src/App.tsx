@@ -76,7 +76,7 @@ export default function App() {
 
       <nav className="tab-bar" aria-label="Navegação principal">
         <button className={tab === 'now' ? 'active' : ''} onClick={openNow}><Icon name="radio" /><span>Agora</span></button>
-        <button className={tab === 'albums' ? 'active' : ''} onClick={openFolders}><Icon name="albums" /><span>Pastas</span></button>
+        <button className={tab === 'albums' ? 'active' : ''} onClick={openFolders}><Icon name="albums" /><span>Coleção</span></button>
       </nav>
     </div>
   )

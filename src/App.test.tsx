@@ -43,8 +43,8 @@ describe('aplicativo integrado ao servidor simulado', () => {
     render(<App />)
     await screen.findByRole('heading', { name: 'Because You Loved Me' })
 
-    await user.click(screen.getByRole('button', { name: 'Pastas' }))
-    expect(await screen.findByRole('heading', { name: 'Pastas' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Coleção' }))
+    expect(await screen.findByRole('heading', { name: 'Coleção' })).toBeInTheDocument()
 
     const openButtons = screen.getAllByRole('button', { name: /Abrir pasta/ })
     expect(openButtons.map((button) => button.getAttribute('aria-label'))).toEqual([
@@ -67,7 +67,7 @@ describe('aplicativo integrado ao servidor simulado', () => {
     listScreen!.scrollTop = 240
 
     await user.click(screen.getByRole('button', { name: 'Agora' }))
-    await user.click(screen.getByRole('button', { name: 'Pastas' }))
+    await user.click(screen.getByRole('button', { name: 'Coleção' }))
 
     expect(screen.getByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
     expect(listScreen!.scrollTop).toBe(240)
@@ -86,8 +86,8 @@ describe('aplicativo integrado ao servidor simulado', () => {
     const user = userEvent.setup()
     render(<App />)
     await screen.findByRole('heading', { name: 'Because You Loved Me' })
-    await user.click(screen.getByRole('button', { name: 'Pastas' }))
-    await screen.findByRole('heading', { name: 'Pastas' })
+    await user.click(screen.getByRole('button', { name: 'Coleção' }))
+    await screen.findByRole('heading', { name: 'Coleção' })
 
     await user.click(screen.getByRole('button', { name: 'Pausar' }))
     expect(document.querySelector('[data-tab-panel="albums"]')).not.toHaveAttribute('hidden')
@@ -105,7 +105,7 @@ describe('aplicativo integrado ao servidor simulado', () => {
     await user.click(screen.getByRole('button', { name: 'Abrir álbum Flash Balada' }))
     expect(await screen.findByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Voltar' }))
-    expect(screen.getByRole('heading', { name: 'Pastas' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Coleção' })).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Abrir álbum Flash Balada' }))
     expect(await screen.findByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()

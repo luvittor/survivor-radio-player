@@ -107,6 +107,9 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   const parent = folder?.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : undefined
   const live = isLive(status)
   const compactTrackNumber = !live && formatTrackNumber(status?.current_media?.track_number)
+  const currentFolderName = status?.current_folder?.split(/[\\/]/).filter(Boolean).pop()
+  const compactDiscMatch = currentFolderName?.match(/(?:^|[\s_-])disc\s+(\d+)$/i)
+  const compactFolderName = compactDiscMatch ? currentFolderName?.replace(/[\s_-]*disc\s+\d+$/i, '').trim() : currentFolderName
 
   const openFolder = (item: CatalogFolder) => {
     setDetailLoading(true)
@@ -145,7 +148,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
                 {status?.current_folder === item.folder && <span className="playing-pill"><Icon name="music" /> Tocando</span>}
               </span>
               <strong>{item.name}</strong>
-              <span>{item.folder.includes('/') ? item.folder.split('/').slice(0, -1).join(' / ') : 'Pasta'}</span>
+              {item.folder.includes('/') && <span>{item.folder.split('/').slice(0, -1).join(' / ')}</span>}
             </button>
             <button className="folder-quick-play" disabled={live || Boolean(pending)} onClick={() => void onSelectFolder(item.folder)} aria-label={`Tocar pasta ${item.name}`} title={`Tocar ${item.name}`}><Icon name="play" /></button>
           </article>
@@ -163,7 +166,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         {root && <>
           <div className="albums-heading">
             <div>
-              <h1 id="albums-title">Pastas</h1>
+              <h1 id="albums-title">Coleção</h1>
               <p>{root.folder_count} pastas · {root.track_count} faixas</p>
             </div>
           </div>
@@ -212,9 +215,15 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         </button>
         <button className="mini-player-open" onClick={onOpenNow} aria-label="Abrir tela Agora pelo player compacto">
           <span className="mini-player-copy">
-            <strong>{live ? 'Ao vivo' : <>{compactTrackNumber && `${compactTrackNumber}. `}{status?.current_media?.title || status?.current_media?.filename || 'Nada tocando'}</>}</strong>
+            <strong>{live ? 'Ao vivo' : status?.current_media?.title || status?.current_media?.filename || 'Nada tocando'}</strong>
             <span>{live ? 'Sinal externo conectado' : joinArtist(status)}</span>
-            {!live && status?.current_media?.album && <span>{status.current_media.album}</span>}
+            {!live && (compactFolderName || compactDiscMatch || compactTrackNumber) && (
+              <span className="mini-player-meta">
+                {compactFolderName && <span className="mini-player-folder">{compactFolderName}</span>}
+                {compactDiscMatch && <span className="mini-player-badge">Disco {compactDiscMatch[1]}</span>}
+                {compactTrackNumber && <span className="mini-player-badge">Faixa {compactTrackNumber}</span>}
+              </span>
+            )}
           </span>
         </button>
         <PlayerControls compact paused={Boolean(status?.paused)} disabled={!status || live || Boolean(pending)} pending={pending} onAction={onAction} />
