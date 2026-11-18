@@ -49,6 +49,50 @@ describe('Coleção', () => {
     expect(screen.getByRole('heading', { name: 'Coleção' })).toBeInTheDocument()
   })
 
+  it('agrupa discos, permite escolher qual tocar e mostra as faixas por disco', async () => {
+    const user = userEvent.setup()
+    const onSelectFolder = vi.fn().mockResolvedValue(undefined)
+    const albumFolders = [1, 2].map((disc) => ({
+      folder: `Metro Tech 11 (2003) Disc ${disc}`,
+      name: `Metro Tech 11 (2003) Disc ${disc}`,
+      artwork_url: `/artwork/disc-${disc}`,
+    }))
+    server.use(http.get(/\/(?:api\/)?control\/catalog$/, ({ request }) => {
+      const folder = new URL(request.url).searchParams.get('folder')
+      if (!folder) return HttpResponse.json({ track_count: 2, folder_count: 2, folders: albumFolders })
+      const disc = folder.endsWith('2') ? 2 : 1
+      return HttpResponse.json({
+        folder,
+        exists: true,
+        subfolders: [],
+        tracks: [{
+          index: 0,
+          track: `0${disc} Track ${disc}.mp3`,
+          name: `Track ${disc}`,
+          metadata: { path: `${folder}/0${disc} Track ${disc}.mp3`, filename: `0${disc} Track ${disc}.mp3`, title: `Track ${disc}` },
+        }],
+      })
+    }))
+    render(<Albums status={initialStatus()} pending={null} onAction={vi.fn()} onSelectFolder={onSelectFolder} onSelectTrack={vi.fn()} onOpenNow={vi.fn()} />)
+
+    const openAlbum = await screen.findByRole('button', { name: 'Abrir pasta Metro Tech 11 (2003)' })
+    expect(screen.getAllByRole('button', { name: /Abrir pasta/ })).toHaveLength(1)
+    await user.click(screen.getByRole('button', { name: 'Escolher disco para tocar Metro Tech 11 (2003)' }))
+    expect(screen.getByRole('group', { name: 'Discos de Metro Tech 11 (2003)' })).toBeInTheDocument()
+    await user.click(screen.getByRole('heading', { name: 'Coleção' }))
+    expect(screen.queryByRole('group', { name: 'Discos de Metro Tech 11 (2003)' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Escolher disco para tocar Metro Tech 11 (2003)' }))
+    await user.click(screen.getByRole('button', { name: 'Disco 2' }))
+    expect(onSelectFolder).toHaveBeenCalledWith('Metro Tech 11 (2003) Disc 2')
+
+    await user.click(openAlbum)
+    expect(await screen.findByRole('heading', { name: 'Disco 1' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Disco 2' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Track 1/ })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Track 2/ })).toBeInTheDocument()
+  })
+
   it('ordena, filtra, abre uma pasta e seleciona uma faixa', async () => {
     const user = userEvent.setup()
     const onSelectTrack = vi.fn().mockResolvedValue(undefined)

@@ -19,13 +19,48 @@ type Props = {
   visible?: boolean
 }
 
+type FolderGroup = {
+  key: string
+  name: string
+  folders: CatalogFolder[]
+}
+
+function discNumber(name: string) {
+  return name.match(/(?:^|[\s_-])disc\s+(\d+)$/i)?.[1]
+}
+
+function baseAlbumName(name: string) {
+  return name.replace(/[\s_-]*disc\s+\d+$/i, '').trim()
+}
+
+function groupFolders(folders: CatalogFolder[]): FolderGroup[] {
+  const groups = new Map<string, FolderGroup>()
+  for (const item of folders) {
+    const number = discNumber(item.name)
+    const parent = item.folder.split(/[\\/]/).slice(0, -1).join('/').toLocaleLowerCase('pt-BR')
+    const name = number ? baseAlbumName(item.name) : item.name
+    const key = number ? `disc:${parent}/${name.toLocaleLowerCase('pt-BR')}` : `folder:${item.folder}`
+    const group = groups.get(key) ?? { key, name, folders: [] }
+    group.folders.push(item)
+    groups.set(key, group)
+  }
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      folders: group.folders.slice().sort((left, right) => Number(discNumber(left.name) || 0) - Number(discNumber(right.name) || 0)),
+    }))
+    .sort((left, right) => naturalCompare(left.name, right.name))
+}
+
 function isRoot(data: CatalogRoot | CatalogDetail): data is CatalogRoot {
   return 'folders' in data
 }
 
 export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrack, onOpenNow, onOpenAlbum, albumNavigation, visible = true }: Props) {
   const [root, setRoot] = useState<CatalogRoot | null>(null)
-  const [detailData, setDetailData] = useState<CatalogDetail | null>(null)
+  const [detailData, setDetailData] = useState<CatalogDetail[] | null>(null)
+  const [selectedFolders, setSelectedFolders] = useState<CatalogFolder[]>([])
+  const [quickPlayGroup, setQuickPlayGroup] = useState<string | null>(null)
   const [folder, setFolder] = useState<string | undefined>()
   const [query, setQuery] = useState('')
   const [detailQuery, setDetailQuery] = useState('')
@@ -37,6 +72,16 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   const [detailReload, setDetailReload] = useState(0)
   const detailScreen = useRef<HTMLElement>(null)
   const listScreen = useRef<HTMLElement>(null)
+  const quickPlayMenuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!quickPlayGroup) return
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (!quickPlayMenuRef.current?.contains(event.target as Node)) setQuickPlayGroup(null)
+    }
+    document.addEventListener('pointerdown', closeOnOutsideClick)
+    return () => document.removeEventListener('pointerdown', closeOnOutsideClick)
+  }, [quickPlayGroup])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -52,14 +97,14 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   useEffect(() => {
     if (!folder) return
     const controller = new AbortController()
-    getCatalog(folder, controller.signal)
-      .then((data) => { if (!isRoot(data)) setDetailData(data) })
+    Promise.all(selectedFolders.map((item) => getCatalog(item.folder, controller.signal)))
+      .then((data) => { if (data.every((item) => !isRoot(item))) setDetailData(data as CatalogDetail[]) })
       .catch((reason) => {
         if (!controller.signal.aborted) setDetailError(reason instanceof Error ? reason.message : 'Falha ao abrir o catálogo')
       })
       .finally(() => { if (!controller.signal.aborted) setDetailLoading(false) })
     return () => controller.abort()
-  }, [folder, detailReload])
+  }, [folder, selectedFolders, detailReload])
 
   useEffect(() => {
     if (!root || !albumNavigation) return
@@ -69,21 +114,23 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         return
       }
       const list = listScreen.current
-      const card = Array.from(list?.querySelectorAll<HTMLElement>('[data-folder]') ?? []).find((item) => item.dataset.folder === albumNavigation.folder)
+      const card = Array.from(list?.querySelectorAll<HTMLElement>('[data-folders]') ?? []).find((item) => item.dataset.folders?.split('|').includes(albumNavigation.folder))
       if (list && card) list.scrollTop += card.getBoundingClientRect().top - list.getBoundingClientRect().top - 28
       if (detailScreen.current) detailScreen.current.scrollTop = 0
       setDetailLoading(true)
       setDetailError(null)
       setDetailQuery('')
-      setFolder(albumNavigation.folder)
+      const targetGroup = groupFolders(root.folders).find((group) => group.folders.some((item) => item.folder === albumNavigation.folder))
+      setSelectedFolders(targetGroup?.folders ?? [{ folder: albumNavigation.folder, name: albumNavigation.folder.split(/[\\/]/).pop() || albumNavigation.folder }])
+      setFolder(targetGroup?.folders[0]?.folder ?? albumNavigation.folder)
     }, 0)
     return () => window.clearTimeout(timer)
   }, [root, albumNavigation, query])
 
-  const detail = detailData?.folder === folder ? detailData : null
+  const detail = detailData?.[0]?.folder === folder ? detailData : null
 
   useEffect(() => {
-    if (!albumNavigation || folder !== albumNavigation.folder || !detail) return
+    if (!albumNavigation || !selectedFolders.some((item) => item.folder === albumNavigation.folder) || !detail) return
     const frame = window.requestAnimationFrame(() => {
       const screen = detailScreen.current
       const currentTrack = screen?.querySelector<HTMLElement>('[data-current-track="true"]')
@@ -102,7 +149,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
       })
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [albumNavigation, detail, folder])
+  }, [albumNavigation, detail, folder, selectedFolders])
 
   const parent = folder?.includes('/') ? folder.slice(0, folder.lastIndexOf('/')) : undefined
   const live = isLive(status)
@@ -110,13 +157,23 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   const currentFolderName = status?.current_folder?.split(/[\\/]/).filter(Boolean).pop()
   const compactDiscMatch = currentFolderName?.match(/(?:^|[\s_-])disc\s+(\d+)$/i)
   const compactFolderName = compactDiscMatch ? currentFolderName?.replace(/[\s_-]*disc\s+\d+$/i, '').trim() : currentFolderName
+  const detailTrackGroups = detail?.map((item, index) => ({
+    detail: item,
+    disc: discNumber(selectedFolders[index]?.name ?? item.folder.split(/[\\/]/).pop() ?? ''),
+  })) ?? []
+  const detailTrackCount = detail?.reduce((count, item) => count + item.tracks.length, 0) ?? 0
+  const detailSubfolders = detail?.flatMap((item) => item.subfolders) ?? []
+  const detailTitle = selectedFolders[0] ? baseAlbumName(selectedFolders[0].name) : folder?.split(/[\\/]/).pop() || ''
+  const detailArtwork = detail?.find((item) => item.artwork_url)?.artwork_url || selectedFolders.find((item) => item.artwork_url)?.artwork_url
 
-  const openFolder = (item: CatalogFolder) => {
+  const openFolder = (group: FolderGroup) => {
+    const foldersToOpen = group.folders
     setDetailLoading(true)
     setDetailError(null)
     setDetailQuery('')
     if (detailScreen.current) detailScreen.current.scrollTop = 0
-    setFolder(item.folder)
+    setSelectedFolders(foldersToOpen)
+    setFolder(foldersToOpen[0].folder)
   }
 
   const navigateTo = (nextFolder?: string) => {
@@ -124,15 +181,14 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
     setDetailError(null)
     setDetailQuery('')
     if (detailScreen.current) detailScreen.current.scrollTop = 0
+    setSelectedFolders(nextFolder ? [{ folder: nextFolder, name: nextFolder.split(/[\\/]/).pop() || nextFolder }] : [])
     setFolder(nextFolder)
   }
 
   const renderFolders = (folders: CatalogFolder[], search: string, onSearch: (value: string) => void) => {
     if (folders.length === 0) return null
-    const filtered = folders
-      .filter((item) => item.name.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
-      .slice()
-      .sort((left, right) => naturalCompare(left.name, right.name))
+    const folderGroups = groupFolders(folders)
+    const filtered = folderGroups.filter((group) => group.name.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
     return <>
       <label className="search-box">
         <Icon name="search" />
@@ -140,19 +196,32 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
         <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Buscar na coleção" type="search" />
       </label>
       <div className="album-grid">
-        {filtered.map((item) => (
-          <article key={item.folder} data-folder={item.folder} className={`album-card${status?.current_folder === item.folder ? ' album-card--active' : ''}`}>
-            <button className="album-open" onClick={() => openFolder(item)} aria-label={`Abrir pasta ${item.name}`}>
+        {filtered.map((group) => {
+          const item = group.folders[0]
+          const isActive = group.folders.some((entry) => status?.current_folder === entry.folder)
+          const hasDiscFolders = group.folders.some((entry) => discNumber(entry.name))
+          const parentPath = item.folder.split(/[\\/]/).slice(0, -1).join(' / ')
+          const subtitle = [parentPath, group.folders.length > 1 ? `${group.folders.length} discos` : discNumber(item.name) ? `Disco ${discNumber(item.name)}` : ''].filter(Boolean).join(' · ')
+          return (
+          <article key={group.key} data-folders={group.folders.map((entry) => entry.folder).join('|')} className={`album-card${isActive ? ' album-card--active' : ''}`}>
+            <button className="album-open" onClick={() => openFolder(group)} aria-label={`Abrir pasta ${group.name}`}>
               <span className="album-cover">
-                <Artwork src={item.artwork_url} alt="" />
-                {status?.current_folder === item.folder && <span className="playing-pill"><Icon name="music" /> Tocando</span>}
+                <Artwork src={item.artwork_url || group.folders.find((entry) => entry.artwork_url)?.artwork_url} alt="" />
+                {isActive && <span className="playing-pill"><Icon name="music" /> Tocando</span>}
               </span>
-              <strong>{item.name}</strong>
-              {item.folder.includes('/') && <span>{item.folder.split('/').slice(0, -1).join(' / ')}</span>}
+              <strong>{group.name}</strong>
+              {subtitle && <span>{subtitle}</span>}
             </button>
-            <button className="folder-quick-play" disabled={live || Boolean(pending)} onClick={() => void onSelectFolder(item.folder)} aria-label={`Tocar pasta ${item.name}`} title={`Tocar ${item.name}`}><Icon name="play" /></button>
+            {hasDiscFolders ? (
+              <div className="folder-play-menu-wrap" ref={quickPlayGroup === group.key ? quickPlayMenuRef : undefined}>
+                <button className="folder-quick-play" disabled={live || Boolean(pending)} onClick={() => setQuickPlayGroup((current) => current === group.key ? null : group.key)} aria-label={`Escolher disco para tocar ${group.name}`} aria-expanded={quickPlayGroup === group.key} title={`Tocar ${group.name}`}><Icon name="play" /></button>
+                {quickPlayGroup === group.key && <div className="folder-play-menu" role="group" aria-label={`Discos de ${group.name}`}>
+                  {group.folders.map((discFolder) => <button key={discFolder.folder} disabled={live || Boolean(pending)} onClick={() => { setQuickPlayGroup(null); void onSelectFolder(discFolder.folder) }}>{discNumber(discFolder.name) ? `Disco ${discNumber(discFolder.name)}` : 'Pasta'}</button>)}
+                </div>}
+              </div>
+            ) : <button className="folder-quick-play" disabled={live || Boolean(pending)} onClick={() => void onSelectFolder(item.folder)} aria-label={`Tocar pasta ${group.name}`} title={`Tocar ${group.name}`}><Icon name="play" /></button>}
           </article>
-        ))}
+        )})}
       </div>
       {filtered.length === 0 && <div className="empty-search">Nenhuma pasta encontrada para “{search}”.</div>}
     </>
@@ -167,7 +236,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
           <div className="albums-heading">
             <div>
               <h1 id="albums-title">Coleção</h1>
-              <p>{root.folder_count} pastas · {root.track_count} faixas</p>
+              <p>{groupFolders(root.folders).length} álbuns · {root.track_count} faixas</p>
             </div>
           </div>
           {renderFolders(root.folders, query, setQuery)}
@@ -182,30 +251,33 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
           <div className="albums-heading albums-heading--detail">
             <div className="detail-heading-main">
               <div className="detail-album-cover">
-                <Artwork src={detail.artwork_url} alt={`Capa de ${detail.folder.split('/').at(-1)}`} />
+                <Artwork src={detailArtwork} alt={`Capa de ${detailTitle}`} />
               </div>
               <div className="detail-heading-copy">
-                <h1 id="detail-title">{detail.folder.split('/').at(-1)}</h1>
-                <p>{detail.tracks.length} faixas{detail.subfolders.length ? ` · ${detail.subfolders.length} pastas` : ''}</p>
+                <h1 id="detail-title">{detailTitle}</h1>
+                <p>{detailTrackCount} faixas{selectedFolders.length > 1 ? ` · ${selectedFolders.length} discos` : detailSubfolders.length ? ` · ${detailSubfolders.length} pastas` : ''}</p>
               </div>
             </div>
           </div>
-          {renderFolders(detail.subfolders, detailQuery, setDetailQuery)}
-          {detail.tracks.length > 0 && (
-            <div className="track-list" aria-label="Faixas">
-              {detail.tracks.map((item) => {
+          {renderFolders(detailSubfolders, detailQuery, setDetailQuery)}
+          {detailTrackGroups.map(({ detail: trackDetail, disc }) => trackDetail.tracks.length > 0 && (
+            <section className="track-disc-group" key={trackDetail.folder} aria-label={disc ? `Disco ${disc}` : undefined}>
+              {disc && <h2 className="track-disc-heading">Disco {disc}</h2>}
+              <div className="track-list" aria-label={disc ? `Faixas do Disco ${disc}` : 'Faixas'}>
+              {trackDetail.tracks.map((item) => {
                 const selected = status?.current_media?.path === item.metadata?.path || status?.current_media?.filename === item.track
                 return (
-                  <button key={`${item.index}-${item.track}`} data-current-track={selected ? 'true' : undefined} className={selected ? 'track-row track-row--active' : 'track-row'} disabled={live || Boolean(pending)} onClick={() => void onSelectTrack(detail.folder, item.track)}>
+                  <button key={`${item.index}-${item.track}`} data-current-track={selected ? 'true' : undefined} className={selected ? 'track-row track-row--active' : 'track-row'} disabled={live || Boolean(pending)} onClick={() => void onSelectTrack(trackDetail.folder, item.track)}>
                     <span className="track-number">{formatTrackNumber(item.metadata?.track_number)}</span>
-                    <span className="track-copy"><strong>{item.metadata?.title || item.name || item.track}</strong><span>{item.metadata?.artist || item.metadata?.album_artist || detail.folder}</span></span>
+                    <span className="track-copy"><strong>{item.metadata?.title || item.name || item.track}</strong><span>{item.metadata?.artist || item.metadata?.album_artist || trackDetail.folder}</span></span>
                     {item.metadata?.duration_seconds != null && <span className="track-duration">{Math.floor(item.metadata.duration_seconds / 60)}:{String(Math.floor(item.metadata.duration_seconds % 60)).padStart(2, '0')}</span>}
                   </button>
                 )
               })}
-            </div>
-          )}
-          {detail.subfolders.length === 0 && detail.tracks.length === 0 && <div className="empty-search">Esta pasta está vazia.</div>}
+              </div>
+            </section>
+          ))}
+          {detail.every((item) => item.subfolders.length === 0 && item.tracks.length === 0) && <div className="empty-search">Esta pasta está vazia.</div>}
         </>}
       </section>
 
