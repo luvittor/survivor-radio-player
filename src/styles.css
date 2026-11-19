@@ -55,7 +55,6 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 @keyframes livePulse { 50% { opacity: .35; } }
 
 .track-info { text-align: center; min-width: 0; }
-.eyebrow { margin: 0 0 9px; color: var(--cyan); font-size: 10px; font-weight: 800; letter-spacing: .2em; }
 .track-labels { width: fit-content; display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin: 0 auto 9px 0; }
 .track-label { display: inline-block; padding: 2px 5px; border: 1px solid rgba(18,200,239,.5); border-radius: 3px; background: transparent; color: var(--cyan); font-size: 10px; font-weight: 400; letter-spacing: .2em; }
 .track-info h1, .albums-heading h1 { margin: 0; font: 800 clamp(24px, 7vw, 38px)/1.12 ui-sans-serif, system-ui, sans-serif; letter-spacing: -.045em; }

@@ -56,7 +56,7 @@ describe('NowPlaying', () => {
     const status = initialStatus()
     render(<NowPlaying status={{ ...status, mode: 'live-uplink', live_connected: true, current_media: { ...status.current_media!, track_number: '1' } }} loading={false} pending={null} onAction={vi.fn()} />)
     expect(screen.getByRole('heading', { name: 'Ao vivo' })).toBeInTheDocument()
-    expect(screen.getByText('TRANSMISSÃO DA REDE')).toBeInTheDocument()
+    expect(screen.getByText('Transmissão de Rede')).toBeInTheDocument()
     expect(screen.queryByText('Faixa 01')).not.toBeInTheDocument()
     expect(screen.getByAltText('Transmissão ao vivo')).toHaveAttribute('src', '/live.svg')
     expect(screen.getByRole('button', { name: 'Pausar' })).toBeDisabled()

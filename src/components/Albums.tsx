@@ -289,11 +289,12 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
           <span className="mini-player-copy">
             <strong>{live ? 'Ao vivo' : status?.current_media?.title || status?.current_media?.filename || 'Nada tocando'}</strong>
             <span>{live ? 'Sinal externo conectado' : joinArtist(status)}</span>
-            {!live && (compactFolderName || compactDiscMatch || compactTrackNumber) && (
+            {(live || compactFolderName || compactDiscMatch || compactTrackNumber) && (
               <span className="mini-player-meta">
-                {compactFolderName && <span className="mini-player-folder">{compactFolderName}</span>}
-                {compactDiscMatch && <span className="mini-player-badge">Disco {compactDiscMatch[1]}</span>}
-                {compactTrackNumber && <span className="mini-player-badge">Faixa {compactTrackNumber}</span>}
+                {live && <span className="mini-player-badge">Transmissão de Rede</span>}
+                {!live && compactFolderName && <span className="mini-player-folder">{compactFolderName}</span>}
+                {!live && compactDiscMatch && <span className="mini-player-badge">Disco {compactDiscMatch[1]}</span>}
+                {!live && compactTrackNumber && <span className="mini-player-badge">Faixa {compactTrackNumber}</span>}
               </span>
             )}
           </span>

@@ -41,7 +41,7 @@ export function NowPlaying({ status, loading, pending, onAction, onOpenAlbum }: 
         </div>
 
         <div className="track-info">
-          {live && <p className="eyebrow">TRANSMISSÃO DA REDE</p>}
+          {live && <div className="track-labels"><span className="track-label">Transmissão de Rede</span></div>}
           {!live && (discMatch || trackNumber) && (
             <div className="track-labels" aria-label={[discMatch && `Disco ${discMatch[1]}`, trackNumber && `Faixa ${trackNumber}`].filter(Boolean).join(' ')}>
               {discMatch && <span className="track-label">Disco {discMatch[1]}</span>}
