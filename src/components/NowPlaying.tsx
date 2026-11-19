@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import { versionedArtworkUrl } from '../api'
+import { useEffect, useState } from 'react'
 import type { RadioStatus } from '../types'
 import { formatTime, formatTrackNumber, isLive, joinArtist } from '../utils'
 import { Artwork } from './Artwork'
@@ -25,12 +24,11 @@ export function NowPlaying({ status, loading, pending, onAction, onOpenAlbum }: 
 
   const artwork = media?.artwork?.available ? media.artwork.url : undefined
   const mediaKey = media?.path
-  const backdrop = useMemo(() => live ? `${import.meta.env.BASE_URL}live.svg` : versionedArtworkUrl(artwork, mediaKey) || `${import.meta.env.BASE_URL}media-placeholder.svg`, [artwork, live, mediaKey])
   const disabled = !status || live || Boolean(pending)
 
   return (
     <section className="now-playing" aria-labelledby="now-title">
-      <div className="artwork-backdrop" style={{ backgroundImage: `url(${JSON.stringify(backdrop).slice(1, -1)})` }} />
+      <div className="artwork-backdrop"><Artwork src={artwork} cacheKey={mediaKey} live={live} alt="" /></div>
       <div className="now-content">
         <div className="cover-shell">
           <button className="cover-open" disabled={!status?.current_folder || !media || live} onClick={onOpenAlbum} aria-label={`Abrir álbum ${media?.album || status?.current_folder || 'atual'}`}>
