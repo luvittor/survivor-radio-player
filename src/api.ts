@@ -1,4 +1,4 @@
-import type { CatalogDetail, CatalogRoot, ControlAction, RadioStatus } from './types'
+import type { CatalogDetail, CatalogRoot, CatalogSearchResponse, ControlAction, RadioStatus } from './types'
 
 export const API_BASE = import.meta.env.DEV ? '/api' : ''
 
@@ -49,6 +49,12 @@ export const getStatus = (signal?: AbortSignal) => requestJson<RadioStatus>('/st
 export const getCatalog = (folder?: string, signal?: AbortSignal) =>
   requestJson<CatalogRoot | CatalogDetail>(
     folder ? `/control/catalog?folder=${encodeURIComponent(folder)}` : '/control/catalog',
+    signal,
+  )
+
+export const searchCatalog = (query: string, limit = 50, offset = 0, signal?: AbortSignal, fields?: string[]) =>
+  requestJson<CatalogSearchResponse>(
+    `/control/search?q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}${fields === undefined ? '' : `&fields=${encodeURIComponent(fields.join(','))}`}`,
     signal,
   )
 

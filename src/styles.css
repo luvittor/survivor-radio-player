@@ -129,6 +129,8 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .track-list { border-top: 1px solid var(--line); }
 .track-row { width: 100%; padding: 13px 4px; border: 0; border-bottom: 1px solid rgba(255,255,255,.07); background: transparent; display: grid; grid-template-columns: 36px minmax(0,1fr) auto; align-items: center; gap: 9px; text-align: left; cursor: pointer; }
 .track-row:hover { background: rgba(255,255,255,.025); }
+.search-track-row { grid-template-columns: 44px 36px minmax(0,1fr) auto; }
+.search-track-artwork { width: 44px; height: 44px; display: block; object-fit: cover; border-radius: 8px; background: #0e1d2d; }
 .track-number { color: #71869a; font-size: 11px; text-align: center; font-variant-numeric: tabular-nums; }
 .track-copy { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
 .track-copy strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
@@ -137,6 +139,9 @@ button:disabled { cursor: not-allowed; opacity: .38; }
 .track-row--active .track-copy strong { color: var(--cyan); }
 .track-disc-group + .track-disc-group { margin-top: 22px; }
 .track-disc-heading { margin: 0; padding: 0 4px 8px; color: var(--cyan); font-size: 13px; font-weight: 700; }
+.search-track-results { margin-top: 24px; }
+.search-loading { min-height: 120px; padding: 14px 4px; color: var(--muted); font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.search-load-sentinel { height: 1px; }
 .empty-search, .catalog-state { min-height: 260px; display: flex; align-items: center; justify-content: center; color: var(--muted); text-align: center; font-size: 13px; }
 .catalog-state { flex-direction: column; gap: 10px; }
 .catalog-state svg { width: 38px; }

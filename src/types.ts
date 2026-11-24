@@ -60,6 +60,18 @@ export type CatalogDetail = {
   tracks: CatalogTrack[]
 }
 
+export type CatalogSearchResult = CatalogTrack & {
+  folder: string
+}
+
+export type CatalogSearchResponse = {
+  query: string
+  total: number
+  offset: number
+  limit: number
+  results: CatalogSearchResult[]
+}
+
 export type ControlAction =
   | 'previous'
   | 'restart'

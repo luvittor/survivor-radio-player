@@ -111,6 +111,26 @@ describe('aplicativo integrado ao servidor simulado', () => {
     expect(await screen.findByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
   })
 
+  it('preserva a busca ao voltar do álbum aberto pela capa compacta e não reaplica navegação antiga', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Because You Loved Me' })
+    await user.click(screen.getByRole('button', { name: 'Coleção' }))
+    const search = await screen.findByPlaceholderText('Buscar na coleção')
+    await user.type(search, 'Metro Tech')
+
+    await user.click(screen.getByRole('button', { name: 'Abrir álbum Flash Balada' }))
+    expect(await screen.findByRole('heading', { name: 'Flash Balada' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Voltar' }))
+
+    const restoredSearch = screen.getByPlaceholderText('Buscar na coleção')
+    expect(restoredSearch).toHaveValue('Metro Tech')
+    await user.type(restoredSearch, 'x')
+    expect(restoredSearch).toHaveValue('Metro Techx')
+    expect(screen.getByRole('heading', { name: 'Coleção' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Flash Balada' })).not.toBeInTheDocument()
+  })
+
   it('mostra o estado offline e permite tentar novamente', async () => {
     server.use(http.get(/\/(?:api\/)?status$/, () => HttpResponse.json({}, { status: 503 })))
     const user = userEvent.setup()

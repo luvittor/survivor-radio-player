@@ -53,6 +53,36 @@ export const handlers = [
     return detail.exists ? HttpResponse.json(detail) : HttpResponse.json({ ...detail, exists: false }, { status: 404 })
   }),
 
+  http.get(/\/(?:api\/)?control\/search$/, ({ request }) => {
+    const url = new URL(request.url)
+    const query = url.searchParams.get('q') || ''
+    const limit = Math.max(1, Math.min(100, Number(url.searchParams.get('limit')) || 50))
+    const offset = Math.max(0, Number(url.searchParams.get('offset')) || 0)
+    const rawFields = url.searchParams.get('fields')
+    const fields = rawFields === null ? ['title', 'artist', 'album_artist', 'album', 'filename', 'folder'] : rawFields.split(',').filter(Boolean)
+    const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
+    const results = Object.entries(mockLibrary).flatMap(([folder, tracks]) => tracks.map((media, index) => ({
+      index,
+      global_index: index,
+      name: media.filename,
+      track: `${folder}/${media.filename}`,
+      folder,
+      metadata: media,
+    }))).filter((item) => {
+      const searchableValues: Record<string, string | undefined> = {
+        title: item.metadata.title,
+        artist: item.metadata.artist,
+        album_artist: item.metadata.album_artist,
+        album: item.metadata.album,
+        filename: item.name,
+        folder: item.track,
+      }
+      return !query.trim() || fields.map((field) => searchableValues[field])
+        .some((value) => value && normalize(value).includes(normalize(query.trim())))
+    })
+    return HttpResponse.json({ query, total: results.length, offset, limit, results: results.slice(offset, offset + limit) })
+  }),
+
   http.get(/\/(?:api\/)?control\/select-folder$/, ({ request }) => {
     const folder = new URL(request.url).searchParams.get('folder') || ''
     state.commands.push(`select-folder:${folder}`)

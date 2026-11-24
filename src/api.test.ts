@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { apiUrl, getCatalog, getStatus, runControl, selectFolder, selectTrack, versionedArtworkUrl } from './api'
+import { apiUrl, getCatalog, getStatus, runControl, searchCatalog, selectFolder, selectTrack, versionedArtworkUrl } from './api'
 import { getMockState, server } from './test/server'
 
 describe('API', () => {
@@ -18,6 +18,23 @@ describe('API', () => {
     expect(status.current_media?.title).toBe('Because You Loved Me')
     expect(root).toMatchObject({ folder_count: 3, track_count: 4 })
     expect(folder).toMatchObject({ folder: 'Flash Balada', exists: true })
+  })
+
+  it('pesquisa faixas e codifica termo e paginação', async () => {
+    server.use(http.get(/\/(?:api\/)?control\/search$/, ({ request }) => {
+      const url = new URL(request.url)
+      expect(url.searchParams.get('fields')).toBe('artist')
+      return HttpResponse.json({
+        query: url.searchParams.get('q'), total: 1,
+        offset: Number(url.searchParams.get('offset')), limit: Number(url.searchParams.get('limit')),
+        results: [{ index: 1, global_index: 1, name: 'Halo.mp3', track: 'Ao Vivo/Halo.mp3', folder: 'Ao Vivo', metadata: { path: 'Ao Vivo/Halo.mp3', filename: 'Halo.mp3', title: 'Halo', artist: 'Beyoncé' } }],
+      })
+    }))
+
+    await expect(searchCatalog('Beyoncé & Halo', 20, 10, undefined, ['artist'])).resolves.toMatchObject({
+      query: 'Beyoncé & Halo', total: 1, offset: 10, limit: 20,
+      results: [{ folder: 'Ao Vivo', track: 'Ao Vivo/Halo.mp3', metadata: { artist: 'Beyoncé' } }],
+    })
   })
 
   it('codifica pastas e faixas e executa os controles no servidor simulado', async () => {

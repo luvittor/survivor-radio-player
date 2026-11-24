@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { getCatalog } from '../api'
-import type { CatalogDetail, CatalogFolder, CatalogRoot, RadioStatus } from '../types'
+import { getCatalog, searchCatalog } from '../api'
+import type { CatalogDetail, CatalogFolder, CatalogRoot, CatalogSearchResult, RadioStatus } from '../types'
 import { formatTrackNumber, isLive, joinArtist, naturalCompare } from '../utils'
 import { Artwork } from './Artwork'
 import { Icon } from './Icons'
@@ -24,6 +24,8 @@ type FolderGroup = {
   name: string
   folders: CatalogFolder[]
 }
+
+const SEARCH_FIELDS = ['title', 'artist']
 
 function discNumber(name: string) {
   return name.match(/(?:^|[\s_-])disc\s+(\d+)$/i)?.[1]
@@ -63,6 +65,10 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   const [quickPlayGroup, setQuickPlayGroup] = useState<string | null>(null)
   const [folder, setFolder] = useState<string | undefined>()
   const [query, setQuery] = useState('')
+  const [searchResults, setSearchResults] = useState<CatalogSearchResult[]>([])
+  const [searchTotal, setSearchTotal] = useState(0)
+  const [searchLoading, setSearchLoading] = useState(false)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const [detailQuery, setDetailQuery] = useState('')
   const [rootLoading, setRootLoading] = useState(true)
   const [detailLoading, setDetailLoading] = useState(false)
@@ -73,6 +79,83 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   const detailScreen = useRef<HTMLElement>(null)
   const listScreen = useRef<HTMLElement>(null)
   const quickPlayMenuRef = useRef<HTMLDivElement>(null)
+  const searchController = useRef<AbortController | null>(null)
+  const searchRequestId = useRef(0)
+  const loadingMoreSearchRef = useRef(false)
+  const searchLoadMoreRef = useRef<HTMLDivElement>(null)
+
+  const updateSearchQuery = (value: string) => {
+    setQuery(value)
+    setSearchResults([])
+    setSearchTotal(0)
+    setSearchLoading(Boolean(value.trim()))
+    setSearchError(null)
+  }
+
+  useEffect(() => {
+    const term = query.trim()
+    searchController.current?.abort()
+    const requestId = ++searchRequestId.current
+    if (!term) return
+
+    const controller = new AbortController()
+    searchController.current = controller
+    const timer = window.setTimeout(() => {
+      searchCatalog(term, 50, 0, controller.signal, SEARCH_FIELDS)
+        .then((response) => {
+          if (requestId !== searchRequestId.current) return
+          setSearchResults(response.results)
+          setSearchTotal(response.total)
+        })
+        .catch((reason) => {
+          if (!controller.signal.aborted && requestId === searchRequestId.current) {
+            setSearchError(reason instanceof Error ? reason.message : 'Falha ao buscar faixas')
+          }
+        })
+        .finally(() => {
+          if (requestId === searchRequestId.current) setSearchLoading(false)
+        })
+    }, 1000)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [query])
+
+  const loadMoreSearchResults = useCallback(async () => {
+    if (searchLoading || loadingMoreSearchRef.current || searchResults.length >= searchTotal) return
+    loadingMoreSearchRef.current = true
+    searchController.current?.abort()
+    const controller = new AbortController()
+    searchController.current = controller
+    const requestId = ++searchRequestId.current
+    setSearchLoading(true)
+    setSearchError(null)
+    try {
+      const response = await searchCatalog(query.trim(), 50, searchResults.length, controller.signal, SEARCH_FIELDS)
+      if (requestId !== searchRequestId.current) return
+      setSearchResults((current) => [...current, ...response.results])
+      setSearchTotal(response.total)
+    } catch (reason) {
+      if (!controller.signal.aborted && requestId === searchRequestId.current) {
+        setSearchError(reason instanceof Error ? reason.message : 'Falha ao buscar faixas')
+      }
+    } finally {
+      loadingMoreSearchRef.current = false
+      if (requestId === searchRequestId.current) setSearchLoading(false)
+    }
+  }, [query, searchLoading, searchResults.length, searchTotal])
+
+  useEffect(() => {
+    const sentinel = searchLoadMoreRef.current
+    if (!query.trim() || searchError || searchLoading || searchResults.length >= searchTotal || !sentinel) return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) void loadMoreSearchResults()
+    }, { root: listScreen.current, rootMargin: '180px 0px' })
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [query, searchError, searchLoading, searchResults.length, searchTotal, loadMoreSearchResults])
 
   useEffect(() => {
     if (!quickPlayGroup) return
@@ -109,10 +192,6 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
   useEffect(() => {
     if (!root || !albumNavigation) return
     const timer = window.setTimeout(() => {
-      if (query) {
-        setQuery('')
-        return
-      }
       const list = listScreen.current
       const card = Array.from(list?.querySelectorAll<HTMLElement>('[data-folders]') ?? []).find((item) => item.dataset.folders?.split('|').includes(albumNavigation.folder))
       if (list && card) list.scrollTop += card.getBoundingClientRect().top - list.getBoundingClientRect().top - 28
@@ -125,7 +204,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
       setFolder(targetGroup?.folders[0]?.folder ?? albumNavigation.folder)
     }, 0)
     return () => window.clearTimeout(timer)
-  }, [root, albumNavigation, query])
+  }, [root, albumNavigation])
 
   const detail = detailData?.[0]?.folder === folder ? detailData : null
 
@@ -185,7 +264,7 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
     setFolder(nextFolder)
   }
 
-  const renderFolders = (folders: CatalogFolder[], search: string, onSearch: (value: string) => void) => {
+  const renderFolders = (folders: CatalogFolder[], search: string, onSearch: (value: string) => void, showEmpty = true) => {
     if (folders.length === 0) return null
     const folderGroups = groupFolders(folders)
     const filtered = folderGroups.filter((group) => group.name.toLocaleLowerCase('pt-BR').includes(search.trim().toLocaleLowerCase('pt-BR')))
@@ -223,7 +302,33 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
           </article>
         )})}
       </div>
-      {filtered.length === 0 && <div className="empty-search">Nenhuma pasta encontrada para “{search}”.</div>}
+      {showEmpty && filtered.length === 0 && <div className="empty-search">Nenhuma pasta encontrada para “{search}”.</div>}
+    </>
+  }
+
+  const renderSearchTracks = () => {
+    if (!query.trim()) return null
+    return <>
+      <section className="track-disc-group search-track-results" aria-labelledby="search-tracks-title">
+        <h2 id="search-tracks-title" className="track-disc-heading">Faixas {searchTotal > 0 && `· ${searchTotal}`}</h2>
+        {searchError && <div className="catalog-state catalog-state--error"><span>{searchError}</span><button onClick={() => setQuery((value) => `${value} `)}>Tentar novamente</button></div>}
+        <div className="track-list" aria-label="Faixas encontradas">
+          {searchResults.map((item) => {
+            const metadata = item.metadata
+            const selected = status?.current_media?.path === metadata?.path || status?.current_media?.filename === item.track
+            const context = [metadata?.artist || metadata?.album_artist, metadata?.album || item.folder].filter(Boolean).join(' · ')
+            return <button key={`${item.global_index ?? item.index}-${item.track}`} data-current-track={selected ? 'true' : undefined} className={`track-row search-track-row${selected ? ' track-row--active' : ''}`} disabled={live || Boolean(pending)} onClick={() => void onSelectTrack(item.folder, item.track)}>
+              <Artwork className="search-track-artwork" src={`/artwork/album?folder=${encodeURIComponent(item.folder)}`} alt={`Capa de ${metadata?.album || item.folder}`} />
+              <span className="track-number">{formatTrackNumber(metadata?.track_number)}</span>
+              <span className="track-copy"><strong>{metadata?.title || item.name || item.track}</strong><span>{context || item.folder}</span></span>
+              {metadata?.duration_seconds != null && <span className="track-duration">{Math.floor(metadata.duration_seconds / 60)}:{String(Math.floor(metadata.duration_seconds % 60)).padStart(2, '0')}</span>}
+            </button>
+          })}
+        </div>
+        {searchLoading && <div className="search-loading" role="status"><span className="spinner" aria-hidden="true" /><span>Buscando faixas…</span></div>}
+        {!searchLoading && !searchError && searchTotal === 0 && <div className="empty-search">Nenhuma faixa encontrada para “{query.trim()}”.</div>}
+        {!searchLoading && !searchError && searchResults.length < searchTotal && <div ref={searchLoadMoreRef} className="search-load-sentinel" aria-hidden="true" />}
+      </section>
     </>
   }
 
@@ -239,7 +344,8 @@ export function Albums({ status, pending, onAction, onSelectFolder, onSelectTrac
               <p>{groupFolders(root.folders).length} álbuns · {root.track_count} faixas</p>
             </div>
           </div>
-          {renderFolders(root.folders, query, setQuery)}
+          {renderFolders(root.folders, query, updateSearchQuery, !query.trim())}
+          {renderSearchTracks()}
         </>}
       </section>
 

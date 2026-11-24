@@ -103,6 +103,7 @@ describe('Coleção', () => {
       'Abrir pasta Flash Balada', 'Abrir pasta Metro Tech 3', 'Abrir pasta Metro Tech 10',
     ])
 
+    server.use(http.get(/\/(?:api\/)?control\/search$/, () => HttpResponse.json({ query: 'Metro Tech 3', total: 0, offset: 0, limit: 50, results: [] })))
     const search = screen.getByPlaceholderText('Buscar na coleção')
     await user.type(search, 'Metro Tech 3')
     expect(screen.queryByRole('button', { name: 'Abrir pasta Metro Tech 10' })).not.toBeInTheDocument()
@@ -116,6 +117,63 @@ describe('Coleção', () => {
 
     await user.click(screen.getByRole('button', { name: 'Voltar' }))
     expect(await screen.findByRole('heading', { name: 'Coleção' })).toBeInTheDocument()
+  })
+
+  it('mostra álbuns e faixas na mesma busca e permite tocar a faixa encontrada', async () => {
+    const user = userEvent.setup()
+    const onSelectTrack = vi.fn().mockResolvedValue(undefined)
+    server.use(http.get(/\/(?:api\/)?control\/search$/, ({ request }) => {
+      const query = new URL(request.url).searchParams.get('q') || ''
+      return HttpResponse.json({
+        query, total: 1, offset: 0, limit: 50,
+        results: [{
+          index: 0, global_index: 4, name: '01 Because You Loved Me.mp3', track: 'Flash Balada/01 Because You Loved Me.mp3', folder: 'Flash Balada',
+          metadata: { path: 'Flash Balada/01 Because You Loved Me.mp3', filename: '01 Because You Loved Me.mp3', title: 'Because You Loved Me', artist: 'Céline Dion', album: 'Flash Balada', track_number: '1', duration_seconds: 290 },
+        }],
+      })
+    }))
+    render(<Albums status={initialStatus()} pending={null} onAction={vi.fn()} onSelectFolder={vi.fn()} onSelectTrack={onSelectTrack} onOpenNow={vi.fn()} />)
+
+    await user.type(await screen.findByPlaceholderText('Buscar na coleção'), 'Flash Balada')
+
+    expect(screen.getByRole('button', { name: 'Abrir pasta Flash Balada' })).toBeInTheDocument()
+    const track = await screen.findByRole('button', { name: /Because You Loved Me/ }, { timeout: 3000 })
+    expect(track).toHaveTextContent('Céline Dion')
+    expect(track.querySelector('img')).toHaveAttribute('alt', 'Capa de Flash Balada')
+    await user.click(track)
+    expect(onSelectTrack).toHaveBeenCalledWith('Flash Balada', 'Flash Balada/01 Because You Loved Me.mp3')
+  })
+
+  it('carrega automaticamente a próxima página ao chegar ao fim dos resultados', async () => {
+    const user = userEvent.setup()
+    const offsets: number[] = []
+    class IntersectingObserverMock {
+      constructor(private readonly callback: IntersectionObserverCallback) {}
+      observe(target: Element) {
+        window.setTimeout(() => this.callback([{ target, isIntersecting: true } as IntersectionObserverEntry], this as unknown as IntersectionObserver), 0)
+      }
+      disconnect() {}
+      unobserve() {}
+      takeRecords() { return [] }
+    }
+    vi.stubGlobal('IntersectionObserver', IntersectingObserverMock)
+    server.use(http.get(/\/(?:api\/)?control\/search$/, ({ request }) => {
+      const url = new URL(request.url)
+      const offset = Number(url.searchParams.get('offset'))
+      offsets.push(offset)
+      const results = Array.from({ length: offset === 0 ? 50 : 1 }, (_, index) => {
+        const number = offset + index
+        return { index: number, global_index: number, name: `Song ${number}.mp3`, track: `Album/Song ${number}.mp3`, folder: 'Album', metadata: { path: `Album/Song ${number}.mp3`, filename: `Song ${number}.mp3`, title: `Song ${number}`, artist: 'Singer' } }
+      })
+      return HttpResponse.json({ query: url.searchParams.get('q'), total: 51, offset, limit: 50, results })
+    }))
+    render(<Albums status={initialStatus()} pending={null} onAction={vi.fn()} onSelectFolder={vi.fn()} onSelectTrack={vi.fn()} onOpenNow={vi.fn()} />)
+
+    await user.type(await screen.findByPlaceholderText('Buscar na coleção'), 'Singer')
+    expect(await screen.findByRole('button', { name: /Song 50/ }, { timeout: 4000 })).toBeInTheDocument()
+    expect(offsets).toEqual([0, 50])
+    expect(screen.queryByRole('button', { name: /Carregar mais faixas/ })).not.toBeInTheDocument()
+    vi.unstubAllGlobals()
   })
 
   it('mostra na lista somente o número da tag do MP3', async () => {
