@@ -1,0 +1,9 @@
+{
+  "sshTarget": "user@host",
+  "remotePlayerPath": "/absolute/path/to/player",
+  "remoteBackupRoot": "/absolute/path/to/backups/player",
+  "remoteUploadDir": "/absolute/path/to/upload-directory",
+  "serviceName": "radio-service.service",
+  "playerUrl": "http://127.0.0.1:PORT/player/",
+  "statusUrl": "http://127.0.0.1:PORT/status"
+}

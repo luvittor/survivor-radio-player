@@ -3,6 +3,10 @@ dist/
 coverage/
 playwright-report/
 test-results/
+scripts/deploy.local.json
+.env
+.env.*
+!.env.example
 *.tsbuildinfo
 public/icon.png
 public/icon-192.png

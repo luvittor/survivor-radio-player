@@ -7,7 +7,7 @@ describe('API', () => {
   it('normaliza caminhos relativos e URLs completas para o proxy', () => {
     expect(apiUrl('status')).toBe('/api/status')
     expect(apiUrl('/status')).toBe('/api/status')
-    expect(apiUrl('http://survivor:18081/artwork/current?metadata=1')).toBe('/api/artwork/current?metadata=1')
+    expect(apiUrl('http://radio.example.test/artwork/current?metadata=1')).toBe('/api/artwork/current?metadata=1')
   })
 
   it('lê status e catálogo do servidor', async () => {
